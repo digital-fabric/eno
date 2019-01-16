@@ -1,0 +1,19 @@
+PATH
+  remote: .
+  specs:
+    eno (0.3)
+      modulation (= 0.18)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    modulation (0.18)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  eno!
+
+BUNDLED WITH
+   1.17.2
