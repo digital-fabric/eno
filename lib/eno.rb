@@ -101,6 +101,11 @@ class Expression
     Operator.new('%', self, expr2)
   end
 
+  # not
+  def !@
+    Not.new(self)
+  end
+  
   def null?
     IsNull.new(self)
   end
@@ -162,6 +167,10 @@ end
 class IsNull < Expression
   def to_sql
     "(#{Expression.quote(@members[0])} is null)"
+  end
+
+  def !@
+    IsNotNull.new(members[0])
   end
 end
 
@@ -439,9 +448,5 @@ class Query
     else
       Identifier.new('*')
     end
-  end
-
-  def _not(expr)
-    IsNull === expr ? IsNotNull.new(expr.members[0]) : Not.new(expr)
   end
 end

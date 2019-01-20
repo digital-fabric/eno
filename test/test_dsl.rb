@@ -142,7 +142,12 @@ class WhereTest < T
 
     assert_sql('select * from a where (b and (not c))') {
       from a
-      where b & _not(c)
+      where b & !c
+    }
+
+    assert_sql('select * from a where (not (b or c))') {
+      from a
+      where !(b | c)
     }
   end
 
@@ -154,7 +159,7 @@ class WhereTest < T
 
     assert_sql('select * from a where (b is not null)') {
       from a
-      where _not(b.null?)
+      where !b.null?
     }
   end
 
