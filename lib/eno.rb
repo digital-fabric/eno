@@ -284,10 +284,81 @@ class Join < Expression
   end
 end
 
+class From < Expression
+  def to_sql
+    "from %s" % @members.map { |m| member_sql(m) }.join(', ')
+  end
+
+  def member_sql(member)
+    if Query === member
+      "%s t1" % Expression.quote(member)
+    elsif Alias === member && Query === member.members[0]
+      "%s %s" % [Expression.quote(member.members[0]), Expression.quote(member.members[1])]
+    else
+      Expression.quote(member)
+    end
+  end
+end
+
+class With < Expression
+  def to_sql
+    "with %s" % @members.map { |e| Expression.quote(e) }.join(', ')
+  end
+end
+
+class Select < Expression
+  def to_sql
+    "select %s%s" % [distinct_clause, @members.map { |e| Expression.quote(e) }.join(', ')]
+  end
+
+  def distinct_clause
+    case (on = @props[:distinct])
+    when nil
+      nil
+    when true
+      "distinct "
+    when Array
+      "distinct on (%s) "  % on.map { |e| Expression.quote(e) }.join(', ')
+    else
+      "distinct on %s "  % Expression.quote(on)
+    end
+  end
+end
+
+class Where < Expression
+  def to_sql
+    "where %s" % @members.map { |e| Expression.quote(e) }.join(' and ')
+  end
+end
+
+class Window < Expression
+  def initialize(sym, &block)
+    super(sym)
+    @block = block
+  end
+
+  def to_sql
+    "window %s as %s" % [
+      Expression.quote(@members.first),
+      WindowExpression.new(&@block).to_sql
+    ]
+  end
+end
+
+class OrderBy < Expression
+  def to_sql
+    "order by %s" % @members.map { |e| Expression.quote(e) }.join(', ')
+  end
+end
+
+class Limit < Expression
+  def to_sql
+    "limit %d" % @members[0]
+  end
+end
+
 class Query
   def initialize(&block)
-    @clauses = {}
-    @aliases = {}
     instance_eval(&block)
   end
 
@@ -301,74 +372,18 @@ class Query
 
   def to_sql
     [
-      _with_clause, _select_clause, _from_clause,
-      _where_clause, _window_clause, _order_by_clause, _limit_clause
-    ].join.strip
+      @with,
+      @select || default_select,
+      @from,
+      @where,
+      @window,
+      @order_by,
+      @limit
+    ].compact.map { |c| c.to_sql }.join(' ')
   end
 
-  def _with_clause
-    return unless @clauses[:with]
-
-    "with %s " % @clauses[:with].map { |e| Expression.quote(e) }.join(', ')
-  end
-
-  def _select_clause
-    select = @clauses[:select] || [:*]
-    "select %s%s " % [_distinct_clause, select.map { |e| Expression.quote(e) }.join(', ')]
-  end
-
-  def _distinct_clause
-    if @clauses[:distinct]
-      "distinct "
-    elsif on = @clauses[:distinct_on]
-      if Array === on
-        "distinct on (%s)"  % on.map { |e| Expression.quote(e) }.join(', ')
-      else
-        "distinct on (%s)"  % Expression.quote(on)
-      end
-    else
-      nil
-    end
-  end
-
-  def _from_clause
-    from = @clauses[:from]
-    if from.nil?
-      return nil
-    elsif Query === from
-      "from %s t1 " % Expression.quote(from)
-    elsif Alias === from && Query === from.members[0]
-      "from %s %s " % [Expression.quote(from.members[0]), Expression.quote(from.members[1])]
-    else
-      "from %s " % Expression.quote(from)
-    end
-  end
-
-  def _where_clause
-    return nil unless @clauses[:where]
-
-    "where %s " % Expression.quote(@clauses[:where])
-  end
-
-  def _window_clause
-    return nil unless @clauses[:window]
-
-    "window %s as %s " % [
-      Expression.quote(@clauses[:window].first),
-      WindowExpression.new(&@clauses[:window].last).to_sql
-    ]
-  end
-
-  def _order_by_clause
-    return unless @clauses[:order_by]
-
-    "order by %s " % @clauses[:order_by].map { |e| Expression.quote(e) }.join(', ')
-  end
-
-  def _limit_clause
-    return unless @clauses[:limit]
-
-    "limit %d" % @clauses[:limit]
+  def default_select
+    Select.new(:*)
   end
 
   def method_missing(sym, *args)
@@ -380,55 +395,42 @@ class Query
     end
   end
 
-  def with(*args)
-    @clauses[:with] = args
+  def with(*members, **props)
+    @with = With.new(*members, **props)
   end
 
   H_EMPTY = {}.freeze
 
-  def select(*args)
-    raise "Cannot select twice" if @clauses[:select]
-
-    props = args.size > 0 && Hash === args.last ? args.pop : H_EMPTY
-       
-    @clauses[:distinct] = props.delete(:distinct) if props[:distinct]
-    @clauses[:distinct_on] = props.delete(:distinct_on) if props[:distinct_on]
-
-    if args.empty? && !props.empty?
-      @clauses[:select] = props.map { |k, v| Alias.new(v, k) }
-    else
-      @clauses[:select] = args
+  def select(*members, **props)
+    if members.empty? && !props.empty?
+      members = props.map { |k, v| Alias.new(v, k) }
+      props = {}
     end
+    @select = Select.new(*members, **props)
   end
 
-  def select_distinct(*args)
-    props = args.size > 0 && Hash === args.last ? args.pop : H_EMPTY
-
-    if props[:on]
-      select(*args, props.merge(distinct_on: props[:on]))
-    else
-      select(*args, props.merge(distinct: true))
-    end
-  end
-
-  def from(source)
-    @clauses[:from] = source
+  def from(*members, **props)
+    @from = From.new(*members, **props)
   end
 
   def where(expr)
-    @clauses[:where] = expr
+    if @where
+      @where.members << expr
+    else
+      @where = Where.new(expr)
+    end
   end
 
   def window(sym, &block)
-    @clauses[:window] = [w, block]
+    @window = Window.new(sym, &block)
   end
 
-  def order_by(*args)
-    @clauses[:order_by] = args
+  def order_by(*members, **props)
+    @order_by = OrderBy.new(*members, **props)
   end
 
-  def limit(value)
-    @clauses[:limit] = value
+  def limit(*members)
+    @limit = Limit.new(*members)
   end
 
   def all(sym = nil)

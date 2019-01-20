@@ -53,7 +53,11 @@ class SelectTest < T
   
   def test_select_distinct
     assert_sql('select distinct a, b') {
-      select_distinct a, b
+      select a, b, distinct: true
+    }
+
+    assert_sql('select distinct on (a + b) a, b') {
+      select a, b, distinct: a + b
     }
   end
 end
