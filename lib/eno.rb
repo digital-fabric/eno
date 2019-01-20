@@ -108,6 +108,14 @@ class Expression
   def not_null?
     IsNotNull.new(self)
   end
+
+  def join(sym, **props)
+    Join.new(self, sym, **props)
+  end
+
+  def inner_join(sym, **props)
+    join(sym, props.merge(type: :inner))
+  end
 end
 
 class Operator < Expression
@@ -248,6 +256,34 @@ class FunctionCall < Expression
   end
 end
 
+class Join < Expression
+  H_JOIN_TYPES = {
+    nil:    'join',
+    inner:  'inner join',
+    outer:  'outer join'
+  }
+
+  def to_sql
+    ("%s %s %s %s" % [
+      Expression.quote(@members[0]),
+      H_JOIN_TYPES[@props[:type]],
+      Expression.quote(@members[1]),
+      condition_sql
+    ]).strip
+  end
+
+  def condition_sql
+    if @props[:on]
+      'on %s' % Expression.quote(@props[:on])
+    elsif using_fields = @props[:using]
+      fields = using_fields.is_a?(Array) ? using_fields : [using_fields]
+      'using (%s)' % fields.map { |f| Expression.quote(f) }.join(', ')
+    else
+      nil
+    end
+  end
+end
+
 class Query
   def initialize(&block)
     @clauses = {}
@@ -265,7 +301,7 @@ class Query
 
   def to_sql
     [
-      _with_clause, _select_clause, _from_clause, _join_clause,
+      _with_clause, _select_clause, _from_clause,
       _where_clause, _window_clause, _order_by_clause, _limit_clause
     ].join.strip
   end
@@ -306,35 +342,6 @@ class Query
     else
       "from %s " % Expression.quote(from)
     end
-  end
-
-  H_JOIN_TYPES = {
-    nil:    'join',
-    inner:  'inner join',
-    outer:  'outer join'
-  }
-
-  def _join_clause
-    return unless @clauses[:joins]
-
-    @clauses[:joins].map { |c|
-      if c[:on]
-        condition = 'on %s' % Expression.quote(c[:on])
-      elsif using_fields = c[:using]
-        fields = c[:using].is_a?(Array) ? c[:using] : [c[:using]]
-        condition = 'using (%s)' % (
-          Array === using_fields ?
-            using_fields.map { |f| Expression.quote(f) }.join(', ') : Expression.quote(using_fields)
-        )
-      else
-        condition = nil
-      end
-      "%s %s %s" % [
-        H_JOIN_TYPES[c[:type]],
-        Expression.quote(c[:from]),
-        condition
-      ]
-    }.join
   end
 
   def _where_clause
@@ -406,15 +413,6 @@ class Query
 
   def from(source)
     @clauses[:from] = source
-  end
-
-  def join(sym, **props)
-    @clauses[:joins] ||= []
-    @clauses[:joins] << props.merge(from: sym)
-  end
-
-  def inner_join(sym, **props)
-    join(sym, props.merge(type: :inner))
   end
 
   def where(expr)

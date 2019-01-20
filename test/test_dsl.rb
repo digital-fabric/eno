@@ -250,8 +250,7 @@ class UseCasesTest < T
               price,
               group_name,
               avg(price).over { partition_by group_name }
-      from products
-      inner_join product_groups, using: group_id
+      from products.inner_join(product_groups, using: group_id)
     }
   end
 
@@ -265,8 +264,7 @@ class UseCasesTest < T
                 partition_by group_name
                 order_by price
               }
-      from products
-      inner_join product_groups, using: group_id
+      from products.inner_join(product_groups, using: group_id)
     }
   end
 
@@ -284,8 +282,7 @@ class UseCasesTest < T
                 partition_by group_name
                 order_by price
               }).as(cur_prev_diff)
-      from products
-      inner_join product_groups, using: group_id
+      from products.inner_join product_groups, using: group_id
      }
   end
 end
