@@ -8,8 +8,10 @@ module ::Kernel
   def Q(&block)
     Query.new(&block)
   end
+end
 
-  def _quote(expr)
+class Expression
+  def self.quote(expr)
     case expr
     when Query
       "(#{expr.to_sql.strip})"
@@ -23,13 +25,12 @@ module ::Kernel
       expr.inspect
     end
   end
-end
 
-class Expression
-  attr_reader :expr
+  attr_reader :members, :props
 
-  def initialize(expr)
-    @expr = expr
+  def initialize(*members, **props)
+    @members = members
+    @props = props
   end
 
   def as(sym = nil, &block)
@@ -49,55 +50,55 @@ class Expression
   end
 
   def ==(expr2)
-    BinaryOperator.new(self, '=', expr2)
+    Operator.new('=', self, expr2)
   end
 
   def !=(expr2)
-    BinaryOperator.new(self, '<>', expr2)
+    Operator.new('<>', self, expr2)
   end
 
   def <(expr2)
-    BinaryOperator.new(self, '<', expr2)
+    Operator.new('<', self, expr2)
   end
 
   def >(expr2)
-    BinaryOperator.new(self, '>', expr2)
+    Operator.new('>', self, expr2)
   end
 
   def <=(expr2)
-    BinaryOperator.new(self, '<=', expr2)
+    Operator.new('<=', self, expr2)
   end
 
   def >=(expr2)
-    BinaryOperator.new(self, '>=', expr2)
+    Operator.new('>=', self, expr2)
   end
 
   def &(expr2)
-    BinaryOperator.new(self, 'and', expr2)
+    Operator.new('and', self, expr2)
   end
 
   def |(expr2)
-    BinaryOperator.new(self, 'or', expr2)
+    Operator.new('or', self, expr2)
   end
 
   def +(expr2)
-    BinaryOperator.new(self, '+', expr2)
+    Operator.new('+', self, expr2)
   end
 
   def -(expr2)
-    BinaryOperator.new(self, '-', expr2)
+    Operator.new('-', self, expr2)
   end
 
   def *(expr2)
-    BinaryOperator.new(self, '*', expr2)
+    Operator.new('*', self, expr2)
   end
 
   def /(expr2)
-    BinaryOperator.new(self, '/', expr2)
+    Operator.new('/', self, expr2)
   end
 
   def %(expr2)
-    BinaryOperator.new(self, '%', expr2)
+    Operator.new('%', self, expr2)
   end
 
   def null?
@@ -109,50 +110,56 @@ class Expression
   end
 end
 
-class BinaryOperator < Expression
-  def initialize(expr1, op, expr2)
-    @expr1 = expr1
-    @op = op
-    @expr2 = expr2
+class Operator < Expression
+  def initialize(*members, **props)
+    op = members[0]
+    if Operator === members[1] && op == members[1].op
+      members = [op] + members[1].members[1..-1] + members[2..-1]
+    end
+    if Operator === members[2] && op == members[2].op
+      members = members[0..1] + members[2].members[1..-1]
+    end
+
+    super(*members, **props)
+  end
+
+  def op
+    @members[0]
   end
 
   def to_sql
-    "(#{_quote(@expr1)} #{@op} #{_quote(@expr2)})"
+    op = " #{@members[0]} "
+    "(%s)" % @members[1..-1].map { |m| Expression.quote(m) }.join(op)
   end
 end
 
 class Desc < Expression
   def to_sql
-    "#{_quote(@expr)} desc"
+    "#{Expression.quote(@members[0])} desc"
   end
 end
 
 class Over < Expression
-  def initialize(expr, window)
-    @expr = expr
-    @window = window
-  end
-
   def to_sql
-    "#{_quote(@expr)} over #{_quote(@window)}"
+    "#{Expression.quote(@members[0])} over #{Expression.quote(@members[1])}"
   end
 end
 
 class Not < Expression
   def to_sql
-    "(not #{_quote(@expr)})"
+    "(not #{Expression.quote(@members[0])})"
   end
 end
 
 class IsNull < Expression
   def to_sql
-    "(#{_quote(@expr)} is null)"
+    "(#{Expression.quote(@members[0])} is null)"
   end
 end
 
 class IsNotNull < Expression
   def to_sql
-    "(#{_quote(@expr)} is not null)"
+    "(#{Expression.quote(@members[0])} is not null)"
   end
 end
 
@@ -183,12 +190,12 @@ class WindowExpression < Expression
 
   def _partition_by_clause
     return nil unless @partition_by
-    "partition by %s " % @partition_by.map { |e| _quote(e) }.join(', ')
+    "partition by %s " % @partition_by.map { |e| Expression.quote(e) }.join(', ')
   end
 
   def _order_by_clause
     return nil unless @order_by
-    "order by %s " % @order_by.map { |e| _quote(e) }.join(', ')
+    "order by %s " % @order_by.map { |e| Expression.quote(e) }.join(', ')
   end
 
   def _range_clause
@@ -197,49 +204,47 @@ class WindowExpression < Expression
   end
 
   def method_missing(sym)
+    super if sym == :to_hash
     Identifier.new(sym)
   end
 end
 
 class QuotedExpression < Expression
   def to_sql
-    _quote(@expr)
+    Expression.quote(@members[0])
   end
 end
 
 class Identifier < Expression
   def to_sql
-    @expr.to_s
+    @members[0].to_s
   end
 
   def method_missing(sym)
-    Identifier.new("#{@expr}.#{sym}")
+    super if sym == :to_hash
+    Identifier.new("#{@members[0]}.#{sym}")
+  end
+
+  def _empty_placeholder?
+    m = @members[0]
+    Symbol === m && m == :_
   end
 end
 
 class Alias < Expression
-  attr_reader :expr, :id
-
-  def initialize(expr, id)
-    @expr = expr
-    @id = id
-  end
-
   def to_sql
-    "#{_quote(@expr)} as #{_quote(@id)}"
+    "#{Expression.quote(@members[0])} as #{Expression.quote(@members[1])}"
   end
 end
 
 class FunctionCall < Expression
-  attr_reader :fun, :args
-
-  def initialize(fun, *args)
-    @fun = fun
-    @args = args
-  end
-
   def to_sql
-    "#{@fun}(#{@args.map { |a| _quote(a) }.join(', ')})"
+    fun = @members[0]
+    if @members.size == 2 && Identifier === @members.last && @members.last._empty_placeholder?
+      "#{fun}()"
+    else
+      "#{fun}(#{@members[1..-1].map { |a| Expression.quote(a) }.join(', ')})"
+    end
   end
 end
 
@@ -268,12 +273,12 @@ class Query
   def _with_clause
     return unless @clauses[:with]
 
-    "with %s " % @clauses[:with].map { |e| _quote(e) }.join(', ')
+    "with %s " % @clauses[:with].map { |e| Expression.quote(e) }.join(', ')
   end
 
   def _select_clause
     select = @clauses[:select] || [:*]
-    "select %s%s " % [_distinct_clause, select.map { |e| _quote(e) }.join(', ')]
+    "select %s%s " % [_distinct_clause, select.map { |e| Expression.quote(e) }.join(', ')]
   end
 
   def _distinct_clause
@@ -281,9 +286,9 @@ class Query
       "distinct "
     elsif on = @clauses[:distinct_on]
       if Array === on
-        "distinct on (%s)"  % on.map { |e| _quote(e) }.join(', ')
+        "distinct on (%s)"  % on.map { |e| Expression.quote(e) }.join(', ')
       else
-        "distinct on (%s)"  % _quote(on)
+        "distinct on (%s)"  % Expression.quote(on)
       end
     else
       nil
@@ -295,28 +300,54 @@ class Query
     if from.nil?
       return nil
     elsif Query === from
-      "from %s t1 " % _quote(from)
-    elsif Alias === from && Query === from.expr
-      "from %s %s " % [_quote(from.expr), _quote(from.id)]
+      "from %s t1 " % Expression.quote(from)
+    elsif Alias === from && Query === from.members[0]
+      "from %s %s " % [Expression.quote(from.members[0]), Expression.quote(from.members[1])]
     else
-      "from %s " % _quote(from)
+      "from %s " % Expression.quote(from)
     end
   end
 
+  H_JOIN_TYPES = {
+    nil:    'join',
+    inner:  'inner join',
+    outer:  'outer join'
+  }
+
   def _join_clause
+    return unless @clauses[:joins]
+
+    @clauses[:joins].map { |c|
+      if c[:on]
+        condition = 'on %s' % Expression.quote(c[:on])
+      elsif using_fields = c[:using]
+        fields = c[:using].is_a?(Array) ? c[:using] : [c[:using]]
+        condition = 'using (%s)' % (
+          Array === using_fields ?
+            using_fields.map { |f| Expression.quote(f) }.join(', ') : Expression.quote(using_fields)
+        )
+      else
+        condition = nil
+      end
+      "%s %s %s" % [
+        H_JOIN_TYPES[c[:type]],
+        Expression.quote(c[:from]),
+        condition
+      ]
+    }.join
   end
 
   def _where_clause
     return nil unless @clauses[:where]
 
-    "where %s " % _quote(@clauses[:where])
+    "where %s " % Expression.quote(@clauses[:where])
   end
 
   def _window_clause
     return nil unless @clauses[:window]
 
     "window %s as %s " % [
-      _quote(@clauses[:window].first),
+      Expression.quote(@clauses[:window].first),
       WindowExpression.new(&@clauses[:window].last).to_sql
     ]
   end
@@ -324,7 +355,7 @@ class Query
   def _order_by_clause
     return unless @clauses[:order_by]
 
-    "order by %s " % @clauses[:order_by].map { |e| _quote(e) }.join(', ')
+    "order by %s " % @clauses[:order_by].map { |e| Expression.quote(e) }.join(', ')
   end
 
   def _limit_clause
@@ -334,6 +365,7 @@ class Query
   end
 
   def method_missing(sym, *args)
+    super if sym == :to_hash
     if args.empty?
       Identifier.new(sym)
     else
@@ -376,6 +408,15 @@ class Query
     @clauses[:from] = source
   end
 
+  def join(sym, **props)
+    @clauses[:joins] ||= []
+    @clauses[:joins] << props.merge(from: sym)
+  end
+
+  def inner_join(sym, **props)
+    join(sym, props.merge(type: :inner))
+  end
+
   def where(expr)
     @clauses[:where] = expr
   end
@@ -401,6 +442,6 @@ class Query
   end
 
   def _not(expr)
-    IsNull === expr ? IsNotNull.new(expr.expr) : Not.new(expr)
+    IsNull === expr ? IsNotNull.new(expr.members[0]) : Not.new(expr)
   end
 end

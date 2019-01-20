@@ -164,33 +164,25 @@ end
 
 class Eno::Identifier
   def [](sym)
-    sym = sym.expr.to_s if Eno::Expression === sym
-    
     case sym
     when Symbol
-      Eno::Alias.new(JSONBExpression.new(self, sym.to_s), sym)
+      Eno::Alias.new(JSONBExpression.new(self, sym), sym)
     else
-      JSONBExpression.new(self, sym.to_s)
+      JSONBExpression.new(self, sym)
     end
   end
 end
 
 class JSONBExpression < Eno::Expression
-  def initialize(column, field)
-    @column = column
-    @field = field
-  end
-
   def to_sql
-    "#{_quote(@column)}->>#{_quote(@field.to_s)}"
+    "#{Eno::Expression.quote(@members[0])}->>'#{Eno::Expression.quote(@members[1])}'"
   end
 end
 
 class DSLTest < T
   def test_that_dsl_can_be_extended
     assert_sql("select attributes->>'path'") {
-      a = attributes[path]
-      select a#attributes[path]
+      select attributes[path]
     }
 
     assert_sql("select attributes->>'path' as path") {
@@ -236,18 +228,64 @@ end
 
 class ExtractEpoch < Eno::Expression
   def to_sql
-    "extract (epoch from #{_quote(@expr)})::integer"
+    "extract (epoch from #{Eno::Expression.quote(@members[0])})::integer"
   end
 end
 
 class UseCasesTest < T
-  def test_use_case_1
-    assert_sql("select extract (epoch from stamp)::integer as stamp, quality, value, unformatted_value, datatype from states where (((path = '/r1') and (stamp >= '2019-01-01 00:00:00+00')) and (stamp < '2019-01-02 00:00:00+00')) order by stamp desc limit 1") {
+  def test_1
+    assert_sql("select extract (epoch from stamp)::integer as stamp, quality, value, unformatted_value, datatype from states where ((path = '/r1') and (stamp >= '2019-01-01 00:00:00+00') and (stamp < '2019-01-02 00:00:00+00')) order by stamp desc limit 1") {
       select extract_epoch_from(stamp).as(stamp), quality, value, unformatted_value, datatype
       from states
       where (path == '/r1') & (stamp >= '2019-01-01 00:00:00+00') & (stamp < '2019-01-02 00:00:00+00')
       order_by stamp.desc
       limit 1
     }
+  end
+
+  def test_2
+    # http://www.postgresqltutorial.com/postgresql-window-function/
+    assert_sql('select product_name, price, group_name, avg(price) over (partition by group_name) from products inner join product_groups using (group_id)') {
+      select  product_name, 
+              price,
+              group_name,
+              avg(price).over { partition_by group_name }
+      from products
+      inner_join product_groups, using: group_id
+    }
+  end
+
+  def test_3
+    # http://www.postgresqltutorial.com/postgresql-window-function/
+    assert_sql('select product_name, group_name, price, row_number() over (partition by group_name order by price) from products inner join product_groups using (group_id)') {
+      select  product_name,
+              group_name,
+              price,
+              row_number(_).over { 
+                partition_by group_name
+                order_by price
+              }
+      from products
+      inner_join product_groups, using: group_id
+    }
+  end
+
+  def test_4
+    # http://www.postgresqltutorial.com/postgresql-window-function/
+    assert_sql('select product_name, group_name, price, lag(price, 1) over (partition by group_name order by price) as prev_price, (price - lag(price, 1) over (partition by group_name order by price)) as cur_prev_diff from products inner join product_groups using (group_id)') {
+      select  product_name,
+              group_name,
+              price,
+              lag(price, 1).over {
+                partition_by group_name
+                order_by price
+              }.as(prev_price),
+              (price - lag(price, 1).over {
+                partition_by group_name
+                order_by price
+              }).as(cur_prev_diff)
+      from products
+      inner_join product_groups, using: group_id
+     }
   end
 end
