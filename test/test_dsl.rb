@@ -269,7 +269,38 @@ class ContextTest < T
       'select a, b from nodes where (deadband < 42)',
       query.to_sql(value: 42)
     )
+  end
 end
+
+class MutationTest < T
+  def test_that_query_can_further_refined_with_where_clause
+    q = Q {
+      select a, b
+    }
+    assert_equal('select a, b', q.to_sql)
+
+    q2 = q.where { c < d}
+    assert(q != q2)
+    assert_equal('select a, b', q.to_sql)
+    assert_equal('select a, b where (c < d)', q2.to_sql)
+
+    q = Q {
+      where _q(2) + _q(2) == _q(5)
+    }
+    assert_equal('select * where ((2 + 2) = 5)', q.to_sql)
+
+    q2 = q.where { _q('up') == _q('down') }
+    assert_equal("select * where ((2 + 2) = 5) and ('up' = 'down')", q2.to_sql)
+  end
+
+  def test_that_mutated_query_can_change_arbitrary_clauses
+    q = Q { select a; from b }
+    assert_equal('select a from b', q.to_sql)
+
+    q2 = q.mutate { from c }
+    assert_equal('select a from b', q.to_sql)
+    assert_equal('select a from c', q2.to_sql)
+  end
 end
 
 class Eno::SQL

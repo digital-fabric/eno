@@ -372,13 +372,29 @@ class Query
     @block = block
   end
 
+  def to_sql(**ctx)
+    r = SQL.new(@ctx.merge(ctx))
+    r.to_sql(&@block)
+  end
+
   def as(sym)
     Alias.new(self, sym)
   end
 
-  def to_sql(**ctx)
-    r = SQL.new(@ctx.merge(ctx))
-    r.to_sql(&@block)
+  def where(&block)
+    old_block = @block
+    Query.new(@ctx) {
+      instance_eval(&old_block)
+      where instance_eval(&block)
+    }
+  end
+
+  def mutate(&block)
+    old_block = @block
+    Query.new(@ctx) {
+      instance_eval(&old_block)
+      instance_eval(&block)
+    }
   end
 end
 
