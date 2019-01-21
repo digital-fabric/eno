@@ -2,11 +2,11 @@
 
 require 'modulation/gem'
 
-export :Query, :Expression, :Identifier, :Alias
+export :Query, :SQL, :Expression, :Identifier, :Alias
 
 module ::Kernel
-  def Q(&block)
-    Query.new(&block)
+  def Q(**ctx, &block)
+    Query.new(**ctx, &block)
   end
 end
 
@@ -367,19 +367,28 @@ class Limit < Expression
 end
 
 class Query
-  def initialize(&block)
-    instance_eval(&block)
-  end
-
-  def _q(expr)
-    QuotedExpression.new(expr)
+  def initialize(**ctx, &block)
+    @ctx = ctx
+    @block = block
   end
 
   def as(sym)
     Alias.new(self, sym)
   end
 
-  def to_sql
+  def to_sql(**ctx)
+    r = SQL.new(@ctx.merge(ctx))
+    r.to_sql(&@block)
+  end
+end
+
+class SQL
+  def initialize(ctx)
+    @ctx = ctx
+  end
+
+  def to_sql(&block)
+    instance_eval(&block)
     [
       @with,
       @select || default_select,
@@ -391,11 +400,20 @@ class Query
     ].compact.map { |c| c.to_sql }.join(' ')
   end
 
+  def _q(expr)
+    QuotedExpression.new(expr)
+  end
+
   def default_select
     Select.new(:*)
   end
 
   def method_missing(sym, *args)
+    if @ctx.has_key?(sym)
+      value = @ctx[sym]
+      return Symbol === value ? Identifier.new(value) : value
+    end
+    
     super if sym == :to_hash
     if args.empty?
       Identifier.new(sym)

@@ -229,7 +229,50 @@ class WindowTest < T
   end
 end
 
-class Eno::Query
+class ContextTest < T
+  def test_that_context_passed_can_be_used_in_query
+    query = Q(tbl: :nodes, field: :sample_rate, value: 42) {
+      select a, b
+      from tbl
+      where field < value
+    }
+    assert_equal(
+      'select a, b from nodes where (sample_rate < 42)',
+      query.to_sql
+    )
+  end
+
+  def test_that_context_can_be_passed_in_to_sql_method
+    query = Q {
+      select a, b
+      from tbl
+      where field < value
+    }
+    assert_equal(
+      'select a, b from nodes where (sample_rate < 43)',
+      query.to_sql(tbl: :nodes, field: :sample_rate, value: 43)
+    )
+  end
+
+  def test_that_to_sql_overrides_initial_context
+    query = Q(tbl: :nodes, field: :deadband) {
+      select a, b
+      from tbl
+      where field < value
+    }
+    assert_equal(
+      'select a, b from nodes where (sample_rate < 42)',
+      query.to_sql(field: :sample_rate, value: 42)
+    )
+  
+    assert_equal(
+      'select a, b from nodes where (deadband < 42)',
+      query.to_sql(value: 42)
+    )
+end
+end
+
+class Eno::SQL
   def extract_epoch_from(sym)
     ExtractEpoch.new(sym)
   end
