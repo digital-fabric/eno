@@ -1,3 +1,6 @@
+0.4 2019-01-21
+--------------
+
 * Implement query mutation
 * Can now use `!` as `not` operator
 * Clauses as real expressions

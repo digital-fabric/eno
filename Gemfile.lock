@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    eno (0.3)
+    eno (0.4)
       modulation (= 0.18)
 
 GEM
