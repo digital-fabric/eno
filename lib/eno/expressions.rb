@@ -3,6 +3,7 @@
 export  :Expression,
         
         :Alias,
+        :Cast,
         :Desc,
         :FunctionCall,
         :Identifier,
@@ -116,6 +117,10 @@ class Expression
     Operator.new('%', self, expr2)
   end
 
+  def ^(expr2)
+    CastShorthand.new(self, expr2)
+  end
+
   # not
   def !@
     Not.new(self)
@@ -136,6 +141,10 @@ class Expression
   def inner_join(sym, **props)
     join(sym, props.merge(type: :inner))
   end
+
+  def cast(sym)
+    Cast.new(self, sym)
+  end
 end
 
 ############################################################
@@ -143,6 +152,18 @@ end
 class Alias < Expression
   def to_sql
     "#{Expression.quote(@members[0])} as #{Expression.quote(@members[1])}"
+  end
+end
+
+class Cast < Expression
+  def to_sql
+    "cast (#{Expression.quote(@members[0])} as #{Expression.quote(@members[1])})"
+  end
+end
+
+class CastShorthand < Expression
+  def to_sql
+    "#{Expression.quote(@members[0])}::#{Expression.quote(@members[1])}"
   end
 end
 

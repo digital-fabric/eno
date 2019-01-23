@@ -303,6 +303,26 @@ class MutationTest < T
   end
 end
 
+class CastTest < T
+  def test_that_cast_is_correctly_formatted
+    assert_sql('select cast (a as b)') { select a.cast(b) }
+    assert_sql('select cast (123 as float)') { select _q(123).cast(float) }
+    assert_sql("select cast ('123' as integer)") { select _q('123').cast(integer) }
+  end
+
+  def test_that_cast_shorthand_is_correctly_formatted
+    assert_sql('select a::b') { select a^b }
+    assert_sql('select 123::float') { select _q(123)^float }
+    assert_sql("select '2019-01-01 00:00+00'::timestamptz") {
+      select _q('2019-01-01 00:00+00')^timestamptz
+    }
+  end
+
+  def test_that_cast_works_wih_symbols
+    assert_sql('select cast (a as b)') { select a.cast(:b) }
+  end
+end
+
 class Eno::SQL
   def extract_epoch_from(sym)
     ExtractEpoch.new(sym)

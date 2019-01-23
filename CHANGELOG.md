@@ -1,3 +1,5 @@
+* Implement cast (using either `#cast` or `#^`)
+
 0.4 2019-01-21
 --------------
 
