@@ -161,6 +161,11 @@ class WhereTest < T
       from a
       where !b.null?
     }
+
+    assert_sql('select * from a where (b is not null)') {
+      from a
+      where !b.null?
+    }
   end
 
   def test_that_where_accepts_arithmetic_operators
@@ -326,6 +331,47 @@ end
 class InTest < T
   def test_that_in_is_correctly_formatted
     assert_sql('select * where a in (1, 2, 3)') { where a.in 1, 2, 3 }
+  end
+end
+
+class LiteralTest < T
+  def test_that_numbers_are_correctly_quoted
+    assert_sql('select 123') { select 123 }
+    assert_sql('select 123') { select _q(123) }
+    assert_sql('select (2 + 2)') { select _q(2) + _q(2) }
+  end
+
+  def test_that_strings_are_correctly_quoted
+    assert_sql("select 'abc'") { select 'abc' }
+  end
+
+  def test_that_null_literal_is_correctly_quoted
+    assert_sql('select null') { select null }
+  end
+end
+
+class ConditionalTest < T
+  def test_that_cond_expression_is_correctly_formatted
+    assert_sql('select case when (a < b) then c else d end') {
+      select cond(
+        (a < b) => c,
+        default => d
+      )
+    }
+  end
+
+  def test_that_cond_expression_can_be_nested
+    assert_sql("select case when quality not in (1, 4, 5) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value ~ '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
+      select cond(
+        !quality.in(1, 4, 5) => null,
+        datatype == 3 => cond(
+          unformatted_value^boolean => 1,
+          default => 0
+        ),
+        unformatted_value =~ '^[+-]?([0-9]*[.])?[0-9]+$' => unformatted_value^float,
+        default => null
+      ).as value_float
+    }
   end
 end
 

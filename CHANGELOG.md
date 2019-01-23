@@ -1,3 +1,5 @@
+* Implement case expression (using `#cond`)
+* Implement not in expression
 * Implement in operator
 * Implement cast operator (using either `#cast` or `#^`)
 

@@ -89,4 +89,12 @@ class SQL
       Expressions::Identifier.new('*')
     end
   end
+
+  def cond(props)
+    Expressions::Case.new(props)
+  end
+
+  def default
+    :default
+  end
 end

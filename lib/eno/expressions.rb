@@ -3,7 +3,9 @@
 export  :Expression,
         
         :Alias,
+        :Case,
         :Cast,
+        :CastShorthand,
         :Desc,
         :FunctionCall,
         :Identifier,
@@ -14,6 +16,7 @@ export  :Expression,
         :Operator,
         :Over,
         :Not,
+        :NotIn,
         :QuotedExpression,
         :WindowExpression,
 
@@ -68,6 +71,10 @@ class Expression
 
   def ==(expr2)
     Operator.new('=', self, expr2)
+  end
+
+  def =~(expr2)
+    Operator.new('~', self, expr2)
   end
 
   def !=(expr2)
@@ -160,6 +167,27 @@ class Alias < Expression
   end
 end
 
+class Case < Expression
+  def initialize(conditions)
+    @props = conditions
+  end
+
+  def to_sql
+    conditions = @props.inject([]) { |a, (k, v)|
+      if k.is_a?(Symbol) && k == :default
+        a
+      else
+        a << "when #{Expression.quote(k)} then #{Expression.quote(v)}"
+      end
+    }
+    if default = @props[:default]
+      conditions << "else #{Expression.quote(default)}"
+    end
+
+    'case %s end' % conditions.join(' ')
+  end
+end
+
 class Cast < Expression
   def to_sql
     "cast (#{Expression.quote(@members[0])} as #{Expression.quote(@members[1])})"
@@ -212,6 +240,10 @@ class In < Expression
       @members[1..-1].map { |m| Expression.quote(m) }.join(', ')
     ]
   end
+
+  def !@
+    NotIn.new(*@members)
+  end
 end
 
 class IsNotNull < Expression
@@ -226,7 +258,7 @@ class IsNull < Expression
   end
 
   def !@
-    IsNotNull.new(members[0])
+    IsNotNull.new(@members[0])
   end
 end
 
@@ -290,6 +322,15 @@ end
 class Not < Expression
   def to_sql
     "(not #{Expression.quote(@members[0])})"
+  end
+end
+
+class NotIn < Expression
+  def to_sql
+    "%s not in (%s)" % [
+      Expression.quote(@members[0]),
+      @members[1..-1].map { |m| Expression.quote(m) }.join(', ')
+    ]
   end
 end
 
