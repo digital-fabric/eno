@@ -1,4 +1,5 @@
-* Implement cast (using either `#cast` or `#^`)
+* Implement in operator
+* Implement cast operator (using either `#cast` or `#^`)
 
 0.4 2019-01-21
 --------------

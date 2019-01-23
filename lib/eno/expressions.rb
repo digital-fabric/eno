@@ -7,6 +7,7 @@ export  :Expression,
         :Desc,
         :FunctionCall,
         :Identifier,
+        :In,
         :IsNotNull,
         :IsNull,
         :Join,
@@ -145,6 +146,10 @@ class Expression
   def cast(sym)
     Cast.new(self, sym)
   end
+
+  def in(*args)
+    In.new(self, *args)
+  end
 end
 
 ############################################################
@@ -197,6 +202,15 @@ class Identifier < Expression
   def _empty_placeholder?
     m = @members[0]
     Symbol === m && m == :_
+  end
+end
+
+class In < Expression
+  def to_sql
+    "%s in (%s)" % [
+      Expression.quote(@members[0]),
+      @members[1..-1].map { |m| Expression.quote(m) }.join(', ')
+    ]
   end
 end
 

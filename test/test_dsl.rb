@@ -323,6 +323,12 @@ class CastTest < T
   end
 end
 
+class InTest < T
+  def test_that_in_is_correctly_formatted
+    assert_sql('select * where a in (1, 2, 3)') { where a.in 1, 2, 3 }
+  end
+end
+
 class Eno::SQL
   def extract_epoch_from(sym)
     ExtractEpoch.new(sym)
