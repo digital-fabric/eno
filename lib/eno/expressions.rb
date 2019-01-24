@@ -157,6 +157,10 @@ class Expression
   def in(*args)
     In.new(self, *args)
   end
+
+  def not_in(*args)
+    NotIn.new(self, *args)
+  end
 end
 
 ############################################################

@@ -331,6 +331,11 @@ end
 class InTest < T
   def test_that_in_is_correctly_formatted
     assert_sql('select * where a in (1, 2, 3)') { where a.in 1, 2, 3 }
+    assert_sql('select * where a not in (1, 2, 3)') { where !a.in(1, 2, 3) }
+  end
+
+  def test_that_not_in_is_correcly_formatted
+    assert_sql('select * where a not in (1, 2, 3)') { where a.not_in 1, 2, 3 }
   end
 end
 
