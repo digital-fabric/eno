@@ -1,19 +1,16 @@
 # frozen_string_literal: true
 
-require 'modulation'
-require 'minitest/autorun'
-
-Eno = import '../lib/eno'
-
-T = MiniTest::Test
-class T
-  def assert_sql(sql, &block); assert_equal(sql, Q(&block).to_sql); end
-end
+require_relative './ext'
 
 class SelectTest < T
   def test_that_no_from_select_is_supported
     assert_sql('select 1') { select 1 }
     assert_sql('select pg_sleep(1)') { select pg_sleep(1) }
+  end
+
+  def test_default_select
+    assert_sql('select *') { }
+    assert_sql('select * from t') { from t}
   end
 
   def test_that_select_with_hash_is_supported
@@ -23,34 +20,6 @@ class SelectTest < T
     }
   end
 
-  def test_that_select_accepts_aliases
-    assert_sql('select 1 as c') { select _q(1).as c }
-    assert_sql('select a as b') { select a.as b }
-    assert_sql('select a as b, c as d') { select (a.as b), (c.as d) }
-  end
-
-  def test_that_function_expressions_can_be_aliased
-    assert_sql('select pg_sleep(1) as s, pg_sleep(2) as s2') {
-      select pg_sleep(1).as(s), pg_sleep(2).as(s2)
-    }
-  end
-
-  def test_that_aliases_can_be_expressed_with_symbols
-    assert_sql('select pg_sleep(1) as s, pg_sleep(2) as s2') {
-      select pg_sleep(1).as(:s), pg_sleep(2).as(:s2)
-    }
-  end
-
-  def test_that_select_accepts_qualified_names
-    assert_sql('select a.b, c.d as e') {
-      select a.b, c.d.as(e)
-    }
-
-    assert_sql('select a.b.c.d') {
-      select a.b.c.d
-    }
-  end
-  
   def test_select_distinct
     assert_sql('select distinct a, b') {
       select a, b, distinct: true
@@ -398,82 +367,5 @@ class ExtractEpoch < Eno::Expression
     
   def to_sql
     "extract (epoch from #{Eno::Expression.quote(@members[0])})::integer"
-  end
-end
-
-class CustomFunctionTest < T
-  class Eno::SQL
-    FLOAT_RE = '^[+-]?([0-9]*[.])?[0-9]+$'.freeze
-    
-    def cast_value
-      uv = unformatted_value
-      cond(
-        quality.not_in(1, 4, 5) => null,
-        (datatype == 3) => cond(uv^boolean => 1, default => 0),
-        (uv =~ FLOAT_RE) => uv^float,
-        default => null
-      )
-    end  
-  end
-
-  def test_that_custom_function_can_be_used_normally
-    assert_sql("select case when quality not in (1, 4, 5) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value ~ '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
-      select cast_value.as value_float
-    }
-  end
-end
-
-class UseCasesTest < T
-  def test_1
-    assert_sql("select extract (epoch from stamp)::integer as stamp, quality, value, unformatted_value, datatype from states where ((path = '/r1') and (stamp >= '2019-01-01 00:00:00+00') and (stamp < '2019-01-02 00:00:00+00')) order by stamp desc limit 1") {
-      select extract_epoch_from(stamp).as(stamp), quality, value, unformatted_value, datatype
-      from states
-      where (path == '/r1') & (stamp >= '2019-01-01 00:00:00+00') & (stamp < '2019-01-02 00:00:00+00')
-      order_by stamp.desc
-      limit 1
-    }
-  end
-
-  def test_2
-    # http://www.postgresqltutorial.com/postgresql-window-function/
-    assert_sql('select product_name, price, group_name, avg(price) over (partition by group_name) from products inner join product_groups using (group_id)') {
-      select  product_name, 
-              price,
-              group_name,
-              avg(price).over { partition_by group_name }
-      from products.inner_join(product_groups, using: group_id)
-    }
-  end
-
-  def test_3
-    # http://www.postgresqltutorial.com/postgresql-window-function/
-    assert_sql('select product_name, group_name, price, row_number() over (partition by group_name order by price) from products inner join product_groups using (group_id)') {
-      select  product_name,
-              group_name,
-              price,
-              row_number(_).over { 
-                partition_by group_name
-                order_by price
-              }
-      from products.inner_join(product_groups, using: group_id)
-    }
-  end
-
-  def test_4
-    # http://www.postgresqltutorial.com/postgresql-window-function/
-    assert_sql('select product_name, group_name, price, lag(price, 1) over (partition by group_name order by price) as prev_price, (price - lag(price, 1) over (partition by group_name order by price)) as cur_prev_diff from products inner join product_groups using (group_id)') {
-      select  product_name,
-              group_name,
-              price,
-              lag(price, 1).over {
-                partition_by group_name
-                order_by price
-              }.as(prev_price),
-              (price - lag(price, 1).over {
-                partition_by group_name
-                order_by price
-              }).as(cur_prev_diff)
-      from products.inner_join product_groups, using: group_id
-     }
   end
 end
