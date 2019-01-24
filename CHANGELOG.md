@@ -1,3 +1,4 @@
+* Implement `#not_in` method
 * Implement case expression (using `#cond`)
 * Implement not in expression
 * Implement in operator
