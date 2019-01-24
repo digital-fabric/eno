@@ -176,24 +176,24 @@ class WhereTest < T
   end
 end
 
-class Eno::Identifier
-  def [](sym)
-    case sym
-    when Symbol
-      Eno::Alias.new(JSONBExpression.new(self, sym), sym)
-    else
-      JSONBExpression.new(self, sym)
+class DSLTest < T
+  class Eno::Identifier
+    def [](sym)
+      case sym
+      when Symbol
+        Eno::Alias.new(JSONBExpression.new(self, sym), sym)
+      else
+        JSONBExpression.new(self, sym)
+      end
     end
   end
-end
-
-class JSONBExpression < Eno::Expression
-  def to_sql
-    "#{Eno::Expression.quote(@members[0])}->>'#{Eno::Expression.quote(@members[1])}'"
+  
+  class JSONBExpression < Eno::Expression
+    def to_sql
+      "#{Eno::Expression.quote(@members[0])}->>'#{Eno::Expression.quote(@members[1])}'"
+    end
   end
-end
-
-class DSLTest < T
+    
   def test_that_dsl_can_be_extended
     assert_sql("select attributes->>'path'") {
       select attributes[path]
@@ -380,15 +380,46 @@ class ConditionalTest < T
   end
 end
 
-class Eno::SQL
-  def extract_epoch_from(sym)
-    ExtractEpoch.new(sym)
+class ConvenienceVariablesTest < T
+  def test_that_convenience_variables_do_not_change_query
+    assert_sql('select unformatted_value::boolean, unformatted_value::float') {
+      uv = unformatted_value
+      select uv^boolean, uv^float
+    }
   end
 end
 
 class ExtractEpoch < Eno::Expression
+  class Eno::SQL
+    def extract_epoch_from(sym)
+      ExtractEpoch.new(sym)
+    end
+  end
+    
   def to_sql
     "extract (epoch from #{Eno::Expression.quote(@members[0])})::integer"
+  end
+end
+
+class CustomFunctionTest < T
+  class Eno::SQL
+    FLOAT_RE = '^[+-]?([0-9]*[.])?[0-9]+$'.freeze
+    
+    def cast_value
+      uv = unformatted_value
+      cond(
+        quality.not_in(1, 4, 5) => null,
+        (datatype == 3) => cond(uv^boolean => 1, default => 0),
+        (uv =~ FLOAT_RE) => uv^float,
+        default => null
+      )
+    end  
+  end
+
+  def test_that_custom_function_can_be_used_normally
+    assert_sql("select case when quality not in (1, 4, 5) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value ~ '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
+      select cast_value.as value_float
+    }
   end
 end
 
