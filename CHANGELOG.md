@@ -1,3 +1,6 @@
+0.5 2019-01-25
+--------------
+
 * Implement query combination: `union`, `intersect`, `except`
 * Implement `#not_in` method
 * Implement case expression (using `#cond`)
