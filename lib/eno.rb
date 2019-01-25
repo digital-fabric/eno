@@ -12,6 +12,6 @@ end
 
 module Eno
   include_from('./eno/expressions')
-  SQL = import('./eno/sql')
-  Query = import('./eno/query')
+  SQL   = import('./eno/sql')::SQL
+  Query = import('./eno/query')::Query
 end

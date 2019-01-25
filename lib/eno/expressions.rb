@@ -31,21 +31,6 @@ export  :Expression,
 Query = import('./query')
 
 class Expression
-  def self.quote(expr)
-    case expr
-    when Query
-      "(#{expr.to_sql.strip})"
-    when Expression
-      expr.to_sql
-    when Symbol
-      expr.to_s
-    when String
-      "'#{expr}'"
-    else
-      expr.inspect
-    end
-  end
-
   attr_reader :members, :props
 
   def initialize(*members, **props)
@@ -57,7 +42,7 @@ class Expression
     if sym
       Alias.new(self, sym)
     else
-      Alias.new(self, Query.new(&block))
+      Alias.new(self, Query::Query.new(&block))
     end
   end
 
@@ -166,8 +151,8 @@ end
 ############################################################
 
 class Alias < Expression
-  def to_sql
-    "#{Expression.quote(@members[0])} as #{Expression.quote(@members[1])}"
+  def to_sql(sql)
+    "#{sql.quote(@members[0])} as #{sql.quote(@members[1])}"
   end
 end
 
@@ -176,16 +161,16 @@ class Case < Expression
     @props = conditions
   end
 
-  def to_sql
+  def to_sql(sql)
     conditions = @props.inject([]) { |a, (k, v)|
       if k.is_a?(Symbol) && k == :default
         a
       else
-        a << "when #{Expression.quote(k)} then #{Expression.quote(v)}"
+        a << "when #{sql.quote(k)} then #{sql.quote(v)}"
       end
     }
     if default = @props[:default]
-      conditions << "else #{Expression.quote(default)}"
+      conditions << "else #{sql.quote(default)}"
     end
 
     'case %s end' % conditions.join(' ')
@@ -193,36 +178,36 @@ class Case < Expression
 end
 
 class Cast < Expression
-  def to_sql
-    "cast (#{Expression.quote(@members[0])} as #{Expression.quote(@members[1])})"
+  def to_sql(sql)
+    "cast (#{sql.quote(@members[0])} as #{sql.quote(@members[1])})"
   end
 end
 
 class CastShorthand < Expression
-  def to_sql
-    "#{Expression.quote(@members[0])}::#{Expression.quote(@members[1])}"
+  def to_sql(sql)
+    "#{sql.quote(@members[0])}::#{sql.quote(@members[1])}"
   end
 end
 
 class Desc < Expression
-  def to_sql
-    "#{Expression.quote(@members[0])} desc"
+  def to_sql(sql)
+    "#{sql.quote(@members[0])} desc"
   end
 end
 
 class FunctionCall < Expression
-  def to_sql
+  def to_sql(sql)
     fun = @members[0]
     if @members.size == 2 && Identifier === @members.last && @members.last._empty_placeholder?
       "#{fun}()"
     else
-      "#{fun}(#{@members[1..-1].map { |a| Expression.quote(a) }.join(', ')})"
+      "#{fun}(#{@members[1..-1].map { |a| sql.quote(a) }.join(', ')})"
     end
   end
 end
 
 class Identifier < Expression
-  def to_sql
+  def to_sql(sql)
     @members[0].to_s
   end
 
@@ -238,10 +223,10 @@ class Identifier < Expression
 end
 
 class In < Expression
-  def to_sql
+  def to_sql(sql)
     "%s in (%s)" % [
-      Expression.quote(@members[0]),
-      @members[1..-1].map { |m| Expression.quote(m) }.join(', ')
+      sql.quote(@members[0]),
+      @members[1..-1].map { |m| sql.quote(m) }.join(', ')
     ]
   end
 
@@ -251,14 +236,14 @@ class In < Expression
 end
 
 class IsNotNull < Expression
-  def to_sql
-    "(#{Expression.quote(@members[0])} is not null)"
+  def to_sql(sql)
+    "(#{sql.quote(@members[0])} is not null)"
   end
 end
 
 class IsNull < Expression
-  def to_sql
-    "(#{Expression.quote(@members[0])} is null)"
+  def to_sql(sql)
+    "(#{sql.quote(@members[0])} is null)"
   end
 
   def !@
@@ -273,21 +258,21 @@ class Join < Expression
     outer:  'outer join'
   }
 
-  def to_sql
+  def to_sql(sql)
     ("%s %s %s %s" % [
-      Expression.quote(@members[0]),
+      sql.quote(@members[0]),
       H_JOIN_TYPES[@props[:type]],
-      Expression.quote(@members[1]),
-      condition_sql
+      sql.quote(@members[1]),
+      condition_sql(sql)
     ]).strip
   end
 
-  def condition_sql
+  def condition_sql(sql)
     if @props[:on]
-      'on %s' % Expression.quote(@props[:on])
+      'on %s' % sql.quote(@props[:on])
     elsif using_fields = @props[:using]
       fields = using_fields.is_a?(Array) ? using_fields : [using_fields]
-      'using (%s)' % fields.map { |f| Expression.quote(f) }.join(', ')
+      'using (%s)' % fields.map { |f| sql.quote(f) }.join(', ')
     else
       nil
     end
@@ -311,36 +296,36 @@ class Operator < Expression
     @members[0]
   end
 
-  def to_sql
+  def to_sql(sql)
     op = " #{@members[0]} "
-    "(%s)" % @members[1..-1].map { |m| Expression.quote(m) }.join(op)
+    "(%s)" % @members[1..-1].map { |m| sql.quote(m) }.join(op)
   end
 end
 
 class Over < Expression
-  def to_sql
-    "#{Expression.quote(@members[0])} over #{Expression.quote(@members[1])}"
+  def to_sql(sql)
+    "#{sql.quote(@members[0])} over #{sql.quote(@members[1])}"
   end
 end
 
 class Not < Expression
-  def to_sql
-    "(not #{Expression.quote(@members[0])})"
+  def to_sql(sql)
+    "(not #{sql.quote(@members[0])})"
   end
 end
 
 class NotIn < Expression
-  def to_sql
+  def to_sql(sql)
     "%s not in (%s)" % [
-      Expression.quote(@members[0]),
-      @members[1..-1].map { |m| Expression.quote(m) }.join(', ')
+      sql.quote(@members[0]),
+      @members[1..-1].map { |m| sql.quote(m) }.join(', ')
     ]
   end
 end
 
 class QuotedExpression < Expression
-  def to_sql
-    Expression.quote(@members[0])
+  def to_sql(sql)
+    sql.quote(@members[0])
   end
 end
 
@@ -361,25 +346,25 @@ class WindowExpression < Expression
     @range = 'between unbounded preceding and unbounded following'
   end
 
-  def to_sql
+  def to_sql(sql)
     "(%s)" % [
-      _partition_by_clause,
-      _order_by_clause,
-      _range_clause
+      _partition_by_clause(sql),
+      _order_by_clause(sql),
+      _range_clause(sql)
     ].join.strip
   end
 
-  def _partition_by_clause
+  def _partition_by_clause(sql)
     return nil unless @partition_by
-    "partition by %s " % @partition_by.map { |e| Expression.quote(e) }.join(', ')
+    "partition by %s " % @partition_by.map { |e| sql.quote(e) }.join(', ')
   end
 
-  def _order_by_clause
+  def _order_by_clause(sql)
     return nil unless @order_by
-    "order by %s " % @order_by.map { |e| Expression.quote(e) }.join(', ')
+    "order by %s " % @order_by.map { |e| sql.quote(e) }.join(', ')
   end
 
-  def _range_clause
+  def _range_clause(sql)
     return nil unless @range
     "range #{@range} "
   end
@@ -393,55 +378,57 @@ end
 ############################################################
 
 class From < Expression
-  def to_sql
-    "from %s" % @members.map { |m| member_sql(m) }.join(', ')
+  def to_sql(sql)
+    "from %s" % @members.map { |m| member_sql(m, sql) }.join(', ')
   end
 
-  def member_sql(member)
-    if Query === member
-      "%s t1" % Expression.quote(member)
-    elsif Alias === member && Query === member.members[0]
-      "%s %s" % [Expression.quote(member.members[0]), Expression.quote(member.members[1])]
+  def member_sql(member, sql)
+    if Query::Query === member
+      "%s t1" % sql.quote(member)
+    elsif Alias === member && Query::Query === member.members[0]
+      "%s %s" % [sql.quote(member.members[0]), sql.quote(member.members[1])]
     else
-      Expression.quote(member)
+      sql.quote(member)
     end
   end
 end
 
 class Limit < Expression
-  def to_sql
+  def to_sql(sql)
     "limit %d" % @members[0]
   end
 end
 
 class OrderBy < Expression
-  def to_sql
-    "order by %s" % @members.map { |e| Expression.quote(e) }.join(', ')
+  def to_sql(sql)
+    "order by %s" % @members.map { |e| sql.quote(e) }.join(', ')
   end
 end
 
 class Select < Expression
-  def to_sql
-    "select %s%s" % [distinct_clause, @members.map { |e| Expression.quote(e) }.join(', ')]
+  def to_sql(sql)
+    "select %s%s" % [
+      distinct_clause(sql), @members.map { |e| sql.quote(e) }.join(', ')
+    ]
   end
 
-  def distinct_clause
+  def distinct_clause(sql)
     case (on = @props[:distinct])
     when nil
       nil
     when true
       "distinct "
     when Array
-      "distinct on (%s) "  % on.map { |e| Expression.quote(e) }.join(', ')
+      "distinct on (%s) "  % on.map { |e| sql.quote(e) }.join(', ')
     else
-      "distinct on %s "  % Expression.quote(on)
+      "distinct on %s "  % sql.quote(on)
     end
   end
 end
 
 class Where < Expression
-  def to_sql
-    "where %s" % @members.map { |e| Expression.quote(e) }.join(' and ')
+  def to_sql(sql)
+    "where %s" % @members.map { |e| sql.quote(e) }.join(' and ')
   end
 end
 
@@ -451,16 +438,16 @@ class Window < Expression
     @block = block
   end
 
-  def to_sql
+  def to_sql(sql)
     "window %s as %s" % [
-      Expression.quote(@members.first),
-      WindowExpression.new(&@block).to_sql
+      sql.quote(@members.first),
+      WindowExpression.new(&@block).to_sql(sql)
     ]
   end
 end
 
 class With < Expression
-  def to_sql
-    "with %s" % @members.map { |e| Expression.quote(e) }.join(', ')
+  def to_sql(sql)
+    "with %s" % @members.map { |e| sql.quote(e) }.join(', ')
   end
 end

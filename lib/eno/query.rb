@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
+export :Query
+
 Expressions = import('./expressions')
 SQL         = import('./sql')
-
-export_default :Query
 
 class Query
   def initialize(**ctx, &block)
@@ -12,7 +12,7 @@ class Query
   end
 
   def to_sql(**ctx)
-    r = SQL.new(@ctx.merge(ctx))
+    r = SQL::SQL.new(@ctx.merge(ctx))
     r.to_sql(&@block)
   end
 
@@ -33,6 +33,12 @@ class Query
     Query.new(@ctx) {
       instance_eval(&old_block)
       instance_eval(&block)
+    }
+  end
+
+  def union(&block)
+    Query.new(@ctx) {
+      union Query.new(&block)
     }
   end
 end

@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 Expressions = import('./expressions')
+Query = import('./query')
 
-export_default :SQL
+export :SQL
 
 class SQL
   def initialize(ctx)
@@ -19,7 +20,22 @@ class SQL
       @window,
       @order_by,
       @limit
-    ].compact.map { |c| c.to_sql }.join(' ')
+    ].compact.map { |c| c.to_sql(self) }.join(' ')
+  end
+
+  def quote(expr)
+    case expr
+    when Query::Query
+      "(#{expr.to_sql(@ctx).strip})"
+    when Expressions::Expression
+      expr.to_sql(self)
+    when Symbol
+      expr.to_s
+    when String
+      "'#{expr}'"
+    else
+      expr.inspect
+    end
   end
 
   def _q(expr)

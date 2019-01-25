@@ -43,6 +43,19 @@ class ContextTest < T
       query.to_sql(value: 42)
     )
   end
+
+  def test_that_context_is_accessible_for_sub_query
+    q1 = Q { select a }
+    q2 = Q { select b; from q1.as t1 }
+    assert_equal('select 3 from (select 2) t1', q2.to_sql(a: 2, b: 3))
+    assert_equal('select 3 from (select 2) tbl', q2.to_sql(a: 2, b: 3, t1: :tbl))
+  end
+
+  def test_that_to_sql_context_overrides_initialized_context
+    q1 = Q(t1: :tbl1) { select a from t1 }
+    q2 = Q(t2: :tbl2) { select b; from q1.as t2 }
+    assert_equal('select 3 from (select 2 from tbl1) tbl2', q2.to_sql(a: 2, b: 3))
+  end
 end
 
 class MutationTest < T
@@ -115,8 +128,8 @@ class UseCasesTest < T
   end
 
   class ExtractEpoch < Eno::Expression
-    def to_sql
-      "extract (epoch from #{Eno::Expression.quote(@members[0])})::integer"
+    def to_sql(sql)
+      "extract (epoch from #{sql.quote(@members[0])})::integer"
     end
   end
   

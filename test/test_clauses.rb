@@ -158,8 +158,8 @@ class DSLTest < T
   end
   
   class JSONBExpression < Eno::Expression
-    def to_sql
-      "#{Eno::Expression.quote(@members[0])}->>'#{Eno::Expression.quote(@members[1])}'"
+    def to_sql(sql)
+      "#{sql.quote(@members[0])}->>'#{sql.quote(@members[1])}'"
     end
   end
     
@@ -365,7 +365,7 @@ class ExtractEpoch < Eno::Expression
     end
   end
     
-  def to_sql
-    "extract (epoch from #{Eno::Expression.quote(@members[0])})::integer"
+  def to_sql(sql)
+    "extract (epoch from #{sql.quote(@members[0])})::integer"
   end
 end
