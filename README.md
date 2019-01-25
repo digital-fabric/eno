@@ -30,7 +30,7 @@ like ActiveRecord's `where`:
 Client.where(order_count: [1, 3, 5])
 ```
 
-And Sequel is a bit more flexible:
+And Sequel is (quite) a bit more flexible:
 
 ```ruby
 Client.where { order_count > 10 }
@@ -115,6 +115,56 @@ Q {
   from exams
   group_by user_id
 }
+```
+
+## Supported clauses
+
+Eno supports the following clauses:
+
+### Select
+
+The `#select` method is used to specify the list of selected expressions for a
+`select` statement. The `select` method accepts a list of expressions:
+
+```ruby
+Q { select a, b + c, d.as(e) } #=> select a, b + c, d as e
+```
+
+The `#select` method can also accept a hash mapping aliases to expressions:
+
+```ruby
+Q { select c: a + b, f: d(e) } #=> select a + b as c, d(e) as f
+```
+
+Columns can be qualified using dot-notation:
+
+```ruby
+Q { select a.b, c.d.e } #=> select a.b, c.d.e
+```
+
+Note: if `#select` is not called within a query block, a `select *` is assumed:
+
+```ruby
+Q { from mytable } #=> select * from mytable
+```
+
+### From
+
+The `#from` method is used to specify one or more sources for the query. Usually
+this would be a table name, a subquery, a CTE name (specified using `#with`):
+
+```ruby
+Q { from a, b, c } #=> select * from a, b, c
+Q { from a.as b } #=> select * from a as b
+```
+
+Subqueries can also be used in `#from`:
+
+```ruby
+Q {
+  select sum(foo.score)
+  from Q { select * from scores }.as(foo)
+} #=> select sum(foo.score) from (select score from scores) as foo
 ```
 
 ## Hooking up Eno to your database
