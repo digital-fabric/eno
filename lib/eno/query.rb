@@ -36,9 +36,36 @@ class Query
     }
   end
 
-  def union(&block)
-    Query.new(@ctx) {
-      union Query.new(&block)
-    }
+  def union(*queries, **props, &block)
+    q1 = self
+    queries << Query.new(&block) if queries.empty?
+    Query.new(@ctx) { union q1, *queries, **props }
+  end
+  alias_method :|, :union
+
+  def union_all(*queries, &block)
+    union(*queries, all: true, &block)
+  end
+
+  def intersect(*queries, **props, &block)
+    q1 = self
+    queries << Query.new(&block) if queries.empty?
+    Query.new(@ctx) { intersect q1, *queries, **props }
+  end
+  alias_method :&, :intersect
+
+  def intersect_all(*queries, &block)
+    intersect(*queries, all: true, &block)
+  end
+
+  def except(*queries, **props, &block)
+    q1 = self
+    queries << Query.new(&block) if queries.empty?
+    Query.new(@ctx) { except q1, *queries, **props }
+  end
+  alias_method :"^", :except
+
+  def except_all(*queries, &block)
+    except(*queries, all: true, &block)
   end
 end

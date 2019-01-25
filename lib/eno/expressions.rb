@@ -20,6 +20,7 @@ export  :Expression,
         :QuotedExpression,
         :WindowExpression,
 
+        :Combination,
         :From,
         :Limit,
         :OrderBy,
@@ -376,6 +377,13 @@ class WindowExpression < Expression
 end
 
 ############################################################
+
+class Combination < Expression
+  def to_sql(sql)
+    union = @props[:all] ? " #{@props[:kind]} all " : " #{@props[:kind]} "
+    @members.map { |m| sql.quote(m) }.join(union)
+  end
+end
 
 class From < Expression
   def to_sql(sql)

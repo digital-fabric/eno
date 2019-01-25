@@ -120,6 +120,134 @@ class CustomFunctionTest < T
   end
 end
 
+class CombinationTest < T
+  def test_union
+    query = Q { select a }.union { select b}
+    assert_equal("(select a) union (select b)", query.to_sql)
+
+    q1 = Q { select a }
+    q2 = Q { select b }
+    assert_equal("(select a) union (select b)", q1.union(q2).to_sql)
+
+    q3 = q1.union(q2).union { select c }
+    assert_equal("((select a) union (select b)) union (select c)", q3.to_sql)
+
+    q4 = q1.union(Q { select b}, Q { select c })
+    assert_equal("(select a) union (select b) union (select c)", q4.to_sql)
+
+    assert_sql("(select a) union (select b)") {
+      union q1, q2
+    }
+  end
+
+  def test_union_all
+    q1 = Q { select a }.union(all: true) { select b }
+    assert_equal("(select a) union all (select b)", q1.to_sql)
+
+    q2 = Q { select a }.union_all(Q { select b}, Q { select c })
+    assert_equal("(select a) union all (select b) union all (select c)", q2.to_sql)
+  end
+
+  def test_union_shorthand
+    q1 = Q { select a }
+    q2 = Q { select b }
+    q3 = Q { select c }
+    assert_equal(
+      '((select a) union (select b)) union (select c)',
+      (q1 | q2 | q3).to_sql
+    )
+  end
+
+  def test_intersect
+    query = Q { select a }.intersect { select b}
+    assert_equal("(select a) intersect (select b)", query.to_sql)
+
+    q1 = Q { select a }
+    q2 = Q { select b }
+    assert_equal("(select a) intersect (select b)", q1.intersect(q2).to_sql)
+
+    q3 = q1.intersect(q2).intersect { select c }
+    assert_equal("((select a) intersect (select b)) intersect (select c)", q3.to_sql)
+
+    q4 = q1.intersect(Q { select b}, Q { select c })
+    assert_equal("(select a) intersect (select b) intersect (select c)", q4.to_sql)
+
+    assert_sql("(select a) intersect (select b)") {
+      intersect q1, q2
+    }
+  end
+
+  def test_intersect_all
+    q1 = Q { select a }.intersect(all: true) { select b }
+    assert_equal("(select a) intersect all (select b)", q1.to_sql)
+
+    q2 = Q { select a }.intersect_all(Q { select b}, Q { select c })
+    assert_equal("(select a) intersect all (select b) intersect all (select c)", q2.to_sql)
+  end
+
+  def test_intersect_shorthand
+    q1 = Q { select a }
+    q2 = Q { select b }
+    q3 = Q { select c }
+    assert_equal(
+      '((select a) intersect (select b)) intersect (select c)',
+      (q1 & q2 & q3).to_sql
+    )
+  end
+
+  def test_except
+    query = Q { select a }.except { select b}
+    assert_equal("(select a) except (select b)", query.to_sql)
+
+    q1 = Q { select a }
+    q2 = Q { select b }
+    assert_equal("(select a) except (select b)", q1.except(q2).to_sql)
+
+    q3 = q1.except(q2).except { select c }
+    assert_equal("((select a) except (select b)) except (select c)", q3.to_sql)
+
+    q4 = q1.except(Q { select b}, Q { select c })
+    assert_equal("(select a) except (select b) except (select c)", q4.to_sql)
+
+    assert_sql("(select a) except (select b)") {
+      except q1, q2
+    }
+  end
+
+  def test_except_all
+    q1 = Q { select a }.except(all: true) { select b }
+    assert_equal("(select a) except all (select b)", q1.to_sql)
+
+    q2 = Q { select a }.except_all(Q { select b}, Q { select c })
+    assert_equal("(select a) except all (select b) except all (select c)", q2.to_sql)
+  end
+
+  def test_except_shorthand
+    q1 = Q { select a }
+    q2 = Q { select b }
+    q3 = Q { select c }
+    assert_equal(
+      '((select a) except (select b)) except (select c)',
+      (q1 ^ q2 ^ q3).to_sql
+    )
+  end
+
+  def test_combination
+    q1 = Q { select a }
+    q2 = Q { select b }
+    q3 = Q { select c }
+    assert_equal(
+      '((select a) union (select b)) intersect (select c)',
+      ((q1 | q2) & q3).to_sql
+    )
+
+    assert_equal(
+      '((select 1) union (select 2)) intersect (select 1)',
+      ((q1 | q2) & q3).to_sql(a: 1, b: 2, c: 1)
+    )
+  end
+end
+
 class UseCasesTest < T
   class Eno::SQL
     def extract_epoch_from(sym)

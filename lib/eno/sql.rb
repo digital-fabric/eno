@@ -12,6 +12,9 @@ class SQL
 
   def to_sql(&block)
     instance_eval(&block)
+
+    return @combination.to_sql(self) if @combination
+
     [
       @with,
       @select || default_select,
@@ -112,5 +115,17 @@ class SQL
 
   def default
     :default
+  end
+
+  def union(*queries, **props)
+    @combination = Expressions::Combination.new(*queries, kind: :union, **props)
+  end
+
+  def intersect(*queries, **props)
+    @combination = Expressions::Combination.new(*queries, kind: :intersect, **props)
+  end
+
+  def except(*queries, **props)
+    @combination = Expressions::Combination.new(*queries, kind: :except, **props)
   end
 end
