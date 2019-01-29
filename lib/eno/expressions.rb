@@ -281,25 +281,37 @@ class Join < Expression
 end
 
 class Operator < Expression
-  def initialize(*members, **props)
-    op = members[0]
-    if Operator === members[1] && op == members[1].op
-      members = [op] + members[1].members[1..-1] + members[2..-1]
+  attr_reader :op
+
+  def initialize(op, *members, **props)
+    if Operator === members[0] && op == members[0].op
+      members = members[0].members + members[1..-1]
     end
-    if Operator === members[2] && op == members[2].op
-      members = members[0..1] + members[2].members[1..-1]
+    if Operator === members.last && op == members.last.op
+      members = members[0..-2] + members.last.members
     end
 
     super(*members, **props)
-  end
-
-  def op
-    @members[0]
+    @op = op
   end
 
   def to_sql(sql)
-    op = " #{@members[0]} "
-    "(%s)" % @members[1..-1].map { |m| sql.quote(m) }.join(op)
+    op_s = " #{@op} "
+    "(%s)" % @members.map { |m| sql.quote(m) }.join(op_s)
+  end
+
+  INVERSE_OP = {
+    '='   => '<>',
+    '<>'  => '=',
+    '<'   => '>=',
+    '>'   => '<=',
+    '<='  => '>',
+    '>='  => '<'
+  }
+
+  def !@
+    inverse = INVERSE_OP[@op]
+    inverse ? Operator.new(inverse, *@members) : super
   end
 end
 
