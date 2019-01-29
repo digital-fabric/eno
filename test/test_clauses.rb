@@ -324,31 +324,6 @@ class LiteralTest < T
   end
 end
 
-class ConditionalTest < T
-  def test_that_cond_expression_is_correctly_formatted
-    assert_sql('select case when (a < b) then c else d end') {
-      select cond(
-        (a < b) => c,
-        default => d
-      )
-    }
-  end
-
-  def test_that_cond_expression_can_be_nested
-    assert_sql("select case when quality not in (1, 4, 5) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value ~ '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
-      select cond(
-        !quality.in(1, 4, 5) => null,
-        datatype == 3 => cond(
-          unformatted_value^boolean => 1,
-          default => 0
-        ),
-        unformatted_value =~ '^[+-]?([0-9]*[.])?[0-9]+$' => unformatted_value^float,
-        default => null
-      ).as value_float
-    }
-  end
-end
-
 class ConvenienceVariablesTest < T
   def test_that_convenience_variables_do_not_change_query
     assert_sql('select unformatted_value::boolean, unformatted_value::float') {

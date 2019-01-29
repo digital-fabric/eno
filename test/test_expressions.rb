@@ -32,6 +32,40 @@ class ExpressionTest < T
   end
 end
 
+class OpTest < T
+  def test_comparison_operators
+    assert_sql('select (a = b)') { select a == b }
+    assert_sql('select (a = b)') { select !(a != b) }
+    assert_sql('select (a = (b + c))') { select a == (b + c) }
+
+    assert_sql('select (a <> b)') { select (a != b) }
+    assert_sql('select (a <> b)') { select !(a == b) }
+
+    assert_sql('select (a > b), (c < d)') { select (a > b), (c < d) }
+    assert_sql('select (a >= b), (c <= d)') { select !(a < b), !(c > d) }
+
+    assert_sql('select (a >= b), (c <= d)') { select (a >= b), (c <= d) }
+    assert_sql('select (a > b), (c < d)') { select !(a <= b), !(c >= d) }
+  end
+
+  def test_math_operators
+    assert_sql('select (a + b), (c - d)') { select a + b, c - d }
+    assert_sql('select (a * b), (c / d), (e % f)') { select a * b, c / d, e % f }
+
+    assert_sql('select (a + (b * c))') { select a + b * c }
+  end
+
+  def test_logical_operators
+    assert_sql('select (a and b), (c or d)') { select a & b, c | d }
+    assert_sql('select (a and (not b))') { select a & !b }
+    assert_sql('select (not (a or b))') { select !(a | b) }
+  end
+
+  def test_cast_shorthand_operator
+    assert_sql('select a::integer') { select a^integer }
+  end
+end
+
 class CastTest < T
   def test_that_cast_is_correctly_formatted
     assert_sql('select cast (a as b)') { select a.cast(b) }
