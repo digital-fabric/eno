@@ -98,14 +98,89 @@ Q {
 }.to_sql #=> "select a, b from c"
 ```
 
-## Using expressions
+## Expressions
 
-Once inside the query block, you can build arbitrarily complex expressions. You
-can mix logical and arithmetic operators:
+Eno lets you build arbitrarily complex expressions once inside the query block.
+You can freely mix identifiers and literals, use most operators (with certain
+caveats) and make function calls.
+
+### Identifiers
+
+An identifier is referenced simply using its name:
 
 ```ruby
-Q { select (a + b) & (c * d) }.to_sql #=> select (a + b) and (c * d)
+Q {
+  select foo
+} #=> select foo
 ```
+
+Identifiers can be qualified by using dot-notation:
+
+```ruby
+Q {
+  select foo.bar
+} #=> select foo.bar
+```
+
+### Literals
+
+Literals can be specified as literals
+
+```ruby
+Q {
+  select x * 10
+} #=> select x * 10
+```
+
+However, if the first argument of an expression is a literal, it will need to be
+wrapped in a call to `#_q`:
+
+```ruby
+Q {
+  select _q(2) + 2
+} #=> select 2 + 2
+```
+
+### Operators
+
+Eno supports the following mathematical operators:
+
+operator | description
+---------|------------
+`+`      | addition
+`-`      | subtraction
+`*`      | multiplication
+`/`      | division
+`%`      | modulo (remainder)
+
+Logical operators are supported using the following operators:
+
+operator | description
+---------|------------
+`&`      | logical and
+`|`      | logical or       
+`!`      | logical not
+
+The following comparison operators are supported:
+
+operator | description
+---------|------------
+`==`     | equal
+`!=`     | not equal
+`<`      | less than
+`>`      | greater than
+`<=`     | less than or equal
+`>=`     | greater than or equal      
+
+An example involving multiple operators:
+
+```ruby
+Q {
+  select (a + b) & (c * d), e >= f
+} #=> select (a + b) and (c * d), e >= f
+```
+
+### functions
 
 You can also use SQL functions:
 
@@ -117,7 +192,7 @@ Q {
 }
 ```
 
-## Supported clauses
+## SQL clauses
 
 Eno supports the following clauses:
 
@@ -166,6 +241,30 @@ Q {
   from Q { select * from scores }.as(foo)
 } #=> select sum(foo.score) from (select score from scores) as foo
 ```
+
+### Where
+
+The `#where` method is used to specify a record filter:
+
+```ruby
+Q {
+  from users
+  where name == 'John Doe' & age > 30
+} #=> select * from users where (name = 'John Doe') and (age > 30)
+```
+
+Where clauses can be of arbitrary complexity (as shown [above](#expressions)),
+and can also be chained in order to mutate and further filter query:
+
+```ruby
+query = Q {
+  from users
+  where state == 'CA'
+}
+query.where { age >= 25 } #=> select * from users where (state = 'CA') and (age >= 25)
+```
+
+
 
 ## Hooking up Eno to your database
 
