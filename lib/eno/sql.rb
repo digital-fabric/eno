@@ -41,8 +41,16 @@ class SQL
     end
   end
 
-  def _q(expr)
-    Expressions::QuotedExpression.new(expr)
+  def context
+    @ctx
+  end
+
+  def _l(value)
+    Expressions::Literal.new(value)
+  end
+
+  def _i(value)
+    Expressions::Identifier.new(value)
   end
 
   def default_select

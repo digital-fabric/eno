@@ -45,7 +45,7 @@ class FromTest < T
   end
 
   def test_that_from_accepts_sub_query
-    query = Q { select _q(1).as a }
+    query = Q { select _l(1).as a }
     assert_sql('select a from (select 1 as a) t1') {
       select a
       from query
@@ -61,7 +61,7 @@ end
 class WithTest < T
   def test_that_with_accepts_sub_queries
     assert_sql('with t1 as (select 1 as a), t2 as (select 2 as b) select * from b') {
-      with t1.as { select _q(1).as a }, t2.as { select _q(2).as b }
+      with t1.as { select _l(1).as a }, t2.as { select _l(2).as b }
       select all
       from b
     }
@@ -259,11 +259,11 @@ class MutationTest < T
     assert_equal('select a, b where (c < d)', q2.to_sql)
 
     q = Q {
-      where _q(2) + _q(2) == _q(5)
+      where _l(2) + _l(2) == _l(5)
     }
     assert_equal('select * where ((2 + 2) = 5)', q.to_sql)
 
-    q2 = q.where { _q('up') == _q('down') }
+    q2 = q.where { _l('up') == _l('down') }
     assert_equal("select * where ((2 + 2) = 5) and ('up' = 'down')", q2.to_sql)
   end
 
@@ -280,15 +280,15 @@ end
 class CastTest < T
   def test_that_cast_is_correctly_formatted
     assert_sql('select cast (a as b)') { select a.cast(b) }
-    assert_sql('select cast (123 as float)') { select _q(123).cast(float) }
-    assert_sql("select cast ('123' as integer)") { select _q('123').cast(integer) }
+    assert_sql('select cast (123 as float)') { select _l(123).cast(float) }
+    assert_sql("select cast ('123' as integer)") { select _l('123').cast(integer) }
   end
 
   def test_that_cast_shorthand_is_correctly_formatted
     assert_sql('select a::b') { select a^b }
-    assert_sql('select 123::float') { select _q(123)^float }
+    assert_sql('select 123::float') { select _l(123)^float }
     assert_sql("select '2019-01-01 00:00+00'::timestamptz") {
-      select _q('2019-01-01 00:00+00')^timestamptz
+      select _l('2019-01-01 00:00+00')^timestamptz
     }
   end
 
@@ -311,8 +311,8 @@ end
 class LiteralTest < T
   def test_that_numbers_are_correctly_quoted
     assert_sql('select 123') { select 123 }
-    assert_sql('select 123') { select _q(123) }
-    assert_sql('select (2 + 2)') { select _q(2) + _q(2) }
+    assert_sql('select 123') { select _l(123) }
+    assert_sql('select (2 + 2)') { select _l(2) + _l(2) }
   end
 
   def test_that_strings_are_correctly_quoted

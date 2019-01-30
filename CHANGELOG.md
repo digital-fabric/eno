@@ -1,3 +1,6 @@
+* Rename `#_q` to `#_l` (for literal)
+* Add `#_i` method for creating identifier
+
 0.5 2019-01-25
 --------------
 

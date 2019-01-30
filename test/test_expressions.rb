@@ -4,7 +4,7 @@ require_relative './ext'
 
 class ExpressionTest < T
   def test_aliases
-    assert_sql('select 1 as c') { select _q(1).as c }
+    assert_sql('select 1 as c') { select _l(1).as c }
     assert_sql('select a as b') { select a.as b }
     assert_sql('select a as b, c as d') { select (a.as b), (c.as d) }
   end
@@ -69,15 +69,15 @@ end
 class CastTest < T
   def test_that_cast_is_correctly_formatted
     assert_sql('select cast (a as b)') { select a.cast(b) }
-    assert_sql('select cast (123 as float)') { select _q(123).cast(float) }
-    assert_sql("select cast ('123' as integer)") { select _q('123').cast(integer) }
+    assert_sql('select cast (123 as float)') { select _l(123).cast(float) }
+    assert_sql("select cast ('123' as integer)") { select _l('123').cast(integer) }
   end
 
   def test_that_cast_shorthand_is_correctly_formatted
     assert_sql('select a::b') { select a^b }
-    assert_sql('select 123::float') { select _q(123)^float }
+    assert_sql('select 123::float') { select _l(123)^float }
     assert_sql("select '2019-01-01 00:00+00'::timestamptz") {
-      select _q('2019-01-01 00:00+00')^timestamptz
+      select _l('2019-01-01 00:00+00')^timestamptz
     }
   end
 
@@ -100,8 +100,8 @@ end
 class LiteralTest < T
   def test_that_numbers_are_correctly_quoted
     assert_sql('select 123') { select 123 }
-    assert_sql('select 123') { select _q(123) }
-    assert_sql('select (2 + 2)') { select _q(2) + _q(2) }
+    assert_sql('select 123') { select _l(123) }
+    assert_sql('select (2 + 2)') { select _l(2) + _l(2) }
   end
 
   def test_that_strings_are_correctly_quoted
@@ -135,5 +135,10 @@ class ConditionalTest < T
         default => null
       ).as value_float
     }
+  end
+end
+
+class AliasTest < T
+  def test_that_alias_is_escaped_as_identifier
   end
 end

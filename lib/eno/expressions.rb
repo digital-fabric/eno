@@ -13,11 +13,11 @@ export  :Expression,
         :IsNotNull,
         :IsNull,
         :Join,
+        :Literal,
         :Operator,
         :Over,
         :Not,
         :NotIn,
-        :QuotedExpression,
         :WindowExpression,
 
         :Combination,
@@ -209,7 +209,7 @@ end
 
 class Identifier < Expression
   def to_sql(sql)
-    @members[0].to_s
+    sql.quote(@members[0].to_sym)
   end
 
   def method_missing(sym)
@@ -280,6 +280,12 @@ class Join < Expression
   end
 end
 
+class Literal < Expression
+  def to_sql(sql)
+    sql.quote(@members[0])
+  end
+end
+
 class Operator < Expression
   attr_reader :op
 
@@ -333,12 +339,6 @@ class NotIn < Expression
       sql.quote(@members[0]),
       @members[1..-1].map { |m| sql.quote(m) }.join(', ')
     ]
-  end
-end
-
-class QuotedExpression < Expression
-  def to_sql(sql)
-    sql.quote(@members[0])
   end
 end
 

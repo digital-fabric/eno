@@ -56,6 +56,11 @@ class ContextTest < T
     q2 = Q(t2: :tbl2) { select b; from q1.as t2 }
     assert_equal('select 3 from (select 2 from tbl1) tbl2', q2.to_sql(a: 2, b: 3))
   end
+
+  def test_that_context_method_gives_context
+    q = Q { from users; where name == context[:user_name] }
+    assert_equal("select * from users where (name = 'foo')", q.to_sql(user_name: 'foo'))
+  end
 end
 
 class MutationTest < T
@@ -71,11 +76,11 @@ class MutationTest < T
     assert_equal('select a, b where (c < d)', q2.to_sql)
 
     q = Q {
-      where _q(2) + _q(2) == _q(5)
+      where _l(2) + _l(2) == _l(5)
     }
     assert_equal('select * where ((2 + 2) = 5)', q.to_sql)
 
-    q2 = q.where { _q('up') == _q('down') }
+    q2 = q.where { _l('up') == _l('down') }
     assert_equal("select * where ((2 + 2) = 5) and ('up' = 'down')", q2.to_sql)
   end
 
