@@ -5,6 +5,12 @@ Query = import('./query')
 
 export :SQL
 
+S_SPACE         = ' '
+S_PARENS        = '(%s)'
+S_QUOTES        = "'%s'"
+S_ALL           = '*'
+S_QUALIFIED_ALL = '%s.*'
+
 class SQL
   def initialize(escape_proc: nil, **ctx)
     @escape_proc = escape_proc
@@ -24,7 +30,7 @@ class SQL
       @window,
       @order_by,
       @limit
-    ].compact.map { |c| c.to_sql(self) }.join(' ')
+    ].compact.map { |c| c.to_sql(self) }.join(S_SPACE)
   end
 
   def quote(expr)
@@ -35,13 +41,13 @@ class SQL
 
     case expr
     when Query::Query
-      "(#{expr.to_sql(@ctx).strip})"
+      S_PARENS % expr.to_sql(@ctx).strip
     when Expressions::Expression
       expr.to_sql(self)
     when Symbol
       expr.to_s
     when String
-      "'#{expr}'"
+      S_QUOTES % expr
     else
       expr.inspect
     end
@@ -117,9 +123,9 @@ class SQL
 
   def all(sym = nil)
     if sym
-      Expressions::Identifier.new("#{sym}.*")
+      Expressions::Identifier.new(S_QUALIFIED_ALL % sym)
     else
-      Expressions::Identifier.new('*')
+      Expressions::Identifier.new(S_ALL)
     end
   end
 
