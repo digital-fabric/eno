@@ -11,8 +11,8 @@ class Query
     @block = block
   end
 
-  def to_sql(**ctx)
-    r = SQL::SQL.new(@ctx.merge(ctx))
+  def to_sql(escape_proc: nil, **ctx)
+    r = SQL::SQL.new(escape_proc: escape_proc, **@ctx.merge(ctx))
     r.to_sql(&@block)
   end
 
@@ -69,3 +69,4 @@ class Query
     except(*queries, all: true, &block)
   end
 end
+ 

@@ -6,7 +6,8 @@ Query = import('./query')
 export :SQL
 
 class SQL
-  def initialize(ctx)
+  def initialize(escape_proc: nil, **ctx)
+    @escape_proc = escape_proc
     @ctx = ctx
   end
 
@@ -27,6 +28,11 @@ class SQL
   end
 
   def quote(expr)
+    if @escape_proc
+      value = @escape_proc.(expr)
+      return value if value
+    end
+
     case expr
     when Query::Query
       "(#{expr.to_sql(@ctx).strip})"
