@@ -158,7 +158,7 @@ Logical operators are supported using the following operators:
 operator | description
 ---------|------------
 `&`      | logical and
-`|`      | logical or       
+`\|`      | logical or       
 `!`      | logical not
 
 The following comparison operators are supported:
