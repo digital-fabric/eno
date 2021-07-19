@@ -1,10 +1,74 @@
-# Eno is Not an ORM
+# Eno - the SQLite Toolkit for Ruby
+
+<h2 style="align: center">Eno is Not an ORM</h2>
 
 [INSTALL](#installing-eno) |
 [TUTORIAL](#getting-started) |
 [EXAMPLES](examples)
 
 ## What is Eno?
+
+Eno is a Ruby gem for working with SQLite databases in Ruby. Eno provides a set
+of tools for implementing various persistence and data access patterns using the
+SQLite embedded database engine.
+
+At the heart of Eno's design is the *data store* - an object that provides a
+specific API for the use case. Each data store exposes a domain-specific API,
+and automatically creates the required database schema.
+
+Eno Implements the following data stores:
+
+- A key-value store providing a **Redis-compatible API** (including keys, lists,
+  hashes, sets, sorted sets, key expiration and pub/sub).
+- An object store for storing arbitrary JSON documents.
+- A log store for structured logging.
+- ~~A historical data store, for storing time-based data~~ (work-in-progress).
+
+## Why use Eno?
+
+Eno lets developers implement a persistence layer for their apps, without having
+to install external database servers such as PostgreSQL, MySQL or Redis, instead
+using SQLite3 as an embedded database engine.
+
+In addition, Eno provides an alternative to ORM, instead relying on using plain
+ruby objects to represent data. The data store paradigm is meant to provide
+specific solutions to different data persistence and access needs, with a
+minimal and uniform API.
+
+Eno is intended as a full-featured toolkit for building lightweight Ruby
+applications. 
+
+```ruby
+require 'eno'
+
+module DataStores
+  def kv_store
+    @kv_store ||= Eno::KVStore.new(self)
+  end
+
+  def todos
+    @todos ||= Eno::ObjectStore.new(self, 'todos')
+  end
+end
+
+DB = Eno::Database.new('todos.db')
+DB.extend DataStores
+
+DB.kv_store
+```
+
+Eno Implements the following data stores:
+
+- A key-value store providing a Redis-compatible API (including keys, lists,
+  hashes, sets, sorted sets, key expiration and pub/sub).
+- An object store for storing arbitrary JSON documents.
+- A log store for structured logging.
+- A historical data store, for storing time-based data.
+
+Multiple data stores can be composed into an entire persistence layer for you
+app. For example, we can have the 
+
+While Eno is not an ORM, it can be used to build ORMs.
 
 Eno is an experimental Ruby gem for working with SQL databases. Eno provides
 tools for writing SQL queries using plain Ruby and specifically for querying
