@@ -8,6 +8,7 @@ GEM
   specs:
     minitest (5.15.0)
     pg (1.1.3)
+    rake (13.0.6)
     sqlite3 (1.3.13)
     webrick (1.7.0)
     yard (0.9.28)
@@ -20,6 +21,7 @@ DEPENDENCIES
   eno!
   minitest (= 5.15.0)
   pg (= 1.1.3)
+  rake (~> 13.0.6)
   sqlite3 (= 1.3.13)
   yard (= 0.9.28)
 

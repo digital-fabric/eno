@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = ["README.md"]
   s.require_paths = ["lib"]
 
+  s.add_development_dependency  'rake',     '~>13.0.6'
   s.add_development_dependency  'minitest', '5.15.0'
   s.add_development_dependency  'yard',     '0.9.28'
   s.add_development_dependency  'pg',       '1.1.3'
