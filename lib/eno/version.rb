@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-class Eno
+module Eno
   VERSION = '0.5'
 end

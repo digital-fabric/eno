@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative './ext'
+require_relative './helper'
 
 class SelectTest < T
   def test_that_no_from_select_is_supported

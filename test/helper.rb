@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
-require 'modulation'
+require 'bundler/setup'
+require 'eno'
 require 'minitest/autorun'
-
-Eno = import '../lib/eno'
 
 T = MiniTest::Test
 class T

@@ -1,17 +1,14 @@
 # frozen_string_literal: true
 
-require 'modulation/gem'
-
-export_default :Eno
-
 module ::Kernel
   def Q(**ctx, &block)
     Eno::Query.new(**ctx, &block)
   end
 end
 
+require_relative 'eno/expression'
+require_relative 'eno/sql'
+require_relative 'eno/query'
+
 module Eno
-  include_from('./eno/expressions')
-  SQL   = import('./eno/sql')::SQL
-  Query = import('./eno/query')::Query
 end

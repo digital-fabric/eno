@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative './ext'
+require_relative './helper'
 
 class ContextTest < T
   def test_that_context_passed_can_be_used_in_query
