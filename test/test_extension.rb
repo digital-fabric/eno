@@ -3,14 +3,43 @@
 require_relative './helper'
 
 class ExtensionTest < MiniTest::Test
-  def test_that_context_passed_can_be_used_in_query
-    query = Q(tbl: :nodes, field: :sample_rate, value: 42) {
-      select a, b
-      from tbl
-      where field < value
+  module FooExtension
+    def foo(x)
+      Q {
+        from foo
+        where bar == x
+      }
+    end
+  end
+
+  def test_extend
+    query = Q {
+      extend FooExtension
+
+      select sum(col)
+      from foo(42)
     }
     assert_equal(
-      'select a, b from nodes where (sample_rate < 42)',
+      'select sum(col) from (select * from foo where (bar = 42)) t1',
+      query.to_sql
+    )
+  end
+
+  module TwizzExtension
+    def twizz
+      [1, 2, 3]
+    end
+  end
+
+  def test_eno_extension
+    Eno.extension(TwizzExtension)
+
+    query = Q {
+      from tbl
+      where foo == twizz
+    }
+    assert_equal(
+      'select * from tbl where (foo = [1, 2, 3])',
       query.to_sql
     )
   end

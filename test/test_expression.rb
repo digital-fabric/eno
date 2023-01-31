@@ -3,6 +3,11 @@
 require_relative './helper'
 
 class ExpressionTest < MiniTest::Test
+  def test_functions
+    assert_sql('select foo(bar)') { select foo(bar) }
+    assert_sql('select foo(bar, \'baz\')') { select foo(bar, 'baz') }
+  end
+
   def test_aliases
     assert_sql('select 1 as c') { select _l(1).as c }
     assert_sql('select a as b') { select a.as b }
