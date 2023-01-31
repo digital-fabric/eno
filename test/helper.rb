@@ -4,7 +4,6 @@ require 'bundler/setup'
 require 'eno'
 require 'minitest/autorun'
 
-T = MiniTest::Test
-class T
+class MiniTest::Test
   def assert_sql(sql, &block); assert_equal(sql, Q(&block).to_sql); end
 end

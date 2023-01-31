@@ -2,7 +2,7 @@
 
 require_relative './helper'
 
-class ExpressionTest < T
+class ExpressionTest < MiniTest::Test
   def test_aliases
     assert_sql('select 1 as c') { select _l(1).as c }
     assert_sql('select a as b') { select a.as b }
@@ -32,7 +32,7 @@ class ExpressionTest < T
   end
 end
 
-class OpTest < T
+class OpTest < MiniTest::Test
   def test_comparison_operators
     assert_sql('select (a = b)') { select a == b }
     assert_sql('select (a = b)') { select !(a != b) }
@@ -66,7 +66,7 @@ class OpTest < T
   end
 end
 
-class CastTest < T
+class CastTest < MiniTest::Test
   def test_that_cast_is_correctly_formatted
     assert_sql('select cast (a as b)') { select a.cast(b) }
     assert_sql('select cast (123 as float)') { select _l(123).cast(float) }
@@ -86,7 +86,7 @@ class CastTest < T
   end
 end
 
-class InTest < T
+class InTest < MiniTest::Test
   def test_that_in_is_correctly_formatted
     assert_sql('select * where a in (1, 2, 3)') { where a.in 1, 2, 3 }
     assert_sql('select * where a not in (1, 2, 3)') { where !a.in(1, 2, 3) }
@@ -97,7 +97,7 @@ class InTest < T
   end
 end
 
-class LiteralTest < T
+class LiteralTest < MiniTest::Test
   def test_that_numbers_are_correctly_quoted
     assert_sql('select 123') { select 123 }
     assert_sql('select 123') { select _l(123) }
@@ -113,7 +113,7 @@ class LiteralTest < T
   end
 end
 
-class ConditionalTest < T
+class ConditionalTest < MiniTest::Test
   def test_that_cond_expression_is_correctly_formatted
     assert_sql('select case when (a < b) then c else d end') {
       select cond(
@@ -138,7 +138,7 @@ class ConditionalTest < T
   end
 end
 
-class AliasTest < T
+class AliasTest < MiniTest::Test
   def test_that_alias_is_escaped_as_identifier
   end
 end

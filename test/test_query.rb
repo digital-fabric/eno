@@ -2,7 +2,7 @@
 
 require_relative './helper'
 
-class ContextTest < T
+class ContextTest < MiniTest::Test
   def test_that_context_passed_can_be_used_in_query
     query = Q(tbl: :nodes, field: :sample_rate, value: 42) {
       select a, b
@@ -63,7 +63,7 @@ class ContextTest < T
   end
 end
 
-class MutationTest < T
+class MutationTest < MiniTest::Test
   def test_that_query_can_further_refined_with_where_clause
     q = Q {
       select a, b
@@ -94,7 +94,7 @@ class MutationTest < T
   end
 end
 
-class ConvenienceVariablesTest < T
+class ConvenienceVariablesTest < MiniTest::Test
   def test_that_convenience_variables_do_not_change_query
     assert_sql('select unformatted_value::boolean, unformatted_value::float') {
       uv = unformatted_value
@@ -103,7 +103,7 @@ class ConvenienceVariablesTest < T
   end
 end
 
-class CustomFunctionTest < T
+class CustomFunctionTest < MiniTest::Test
   class Eno::SQL
     FLOAT_RE = '^[+-]?([0-9]*[.])?[0-9]+$'.freeze
     
@@ -125,7 +125,7 @@ class CustomFunctionTest < T
   end
 end
 
-class CombinationTest < T
+class CombinationTest < MiniTest::Test
   def test_union
     query = Q { select a }.union { select b}
     assert_equal("(select a) union (select b)", query.to_sql)
@@ -253,7 +253,7 @@ class CombinationTest < T
   end
 end
 
-class UseCasesTest < T
+class UseCasesTest < MiniTest::Test
   class Eno::SQL
     def extract_epoch_from(sym)
       ExtractEpoch.new(sym)

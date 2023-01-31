@@ -5,7 +5,7 @@ import('../../lib/eno/pg')
 
 require 'pp'
 
-class PostgresTest < T
+class PostgresTest < MiniTest::Test
   DB = PG.connect(
     host:     '/tmp',
     user:     'reality',
