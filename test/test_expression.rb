@@ -145,5 +145,6 @@ end
 
 class AliasTest < MiniTest::Test
   def test_that_alias_is_escaped_as_identifier
+    assert_sql('select a as "b c"') { select a.as :"b c" }
   end
 end

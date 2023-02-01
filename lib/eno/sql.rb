@@ -41,14 +41,15 @@ module Eno
       when Expression
         expr.to_sql(self)
       when Symbol
-        expr.to_s
+        s = expr.to_s
+        s =~ / / ? "\"#{s}\"" : s
       when String
         S_QUOTES % expr
       else
         expr.inspect
       end
     end
-    
+
     def context
       @ctx
     end
