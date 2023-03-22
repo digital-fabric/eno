@@ -145,5 +145,9 @@ module Eno
     def except(*queries, **props)
       @combination = Combination.new(*queries, kind: :except, **props)
     end
+
+    def json(*args, **props)
+      JsonExpression.new(*args, **props)
+    end
   end
 end

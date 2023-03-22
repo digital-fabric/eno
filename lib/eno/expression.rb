@@ -58,6 +58,7 @@ module Eno
     S_MUL   = '*'
     S_DIV   = '/'
     S_MOD   = '%'
+    S_LIKE  = 'like'
     
     # Returns an operator expression using `==`.
     #
@@ -72,7 +73,24 @@ module Eno
     # @param expr2 [any] Right hand expression
     # @return [Eno::Operator] Operator expression
     def =~(expr2)
-      Operator.new(S_TILDE, self, expr2)
+      case expr2
+      when String
+        Operator.new(S_LIKE, self, expr2)
+      when Range
+        Between.new(self, expr2)
+      when Array
+        In.new(self, *expr2)
+      when Eno::Query
+        In.new(self, expr2)
+      when Hash
+        NamespacedHash.new(self, expr2)
+      else
+        Operator.new(S_EQ, self, expr2)
+      end
+    end
+
+    def !~(expr2)
+      !(self =~ expr2)
     end
     
     # Returns an operator expression using `!=`.
@@ -347,11 +365,15 @@ module Eno
       m = @members[0]
       Symbol === m && m == :_
     end
+
+    def json(*args, **props)
+      JsonExpression.new(self, *args, **props)
+    end
   end
   
   # In expression
   class In < Expression
-    S_IN    = '%s in (%s)'
+    S_IN = '(%s in (%s))'
     
     def to_sql(sql)
       S_IN % [
@@ -362,6 +384,91 @@ module Eno
     
     def !@
       NotIn.new(*@members)
+    end
+  end
+
+  # Between expression
+  class Between < Expression
+    S_BETWEEN = '(%s between %s and %s)'
+
+    def to_sql(sql)
+      S_BETWEEN % [
+        sql.quote(@members[0]),
+        sql.quote(@members[1].begin),
+        sql.quote(@members[1].end)
+      ]
+    end
+
+    def !@
+      NotBetween.new(*@members)
+    end
+  end
+
+  # NamedspacedHash expression
+  class NamespacedHash < Expression
+    def to_sql(sql)
+      left, right = *@members
+      case left
+      when Identifier
+        parts = []
+        right.each do |k, v|
+          parts << ((left.send(k)) =~ v).to_sql(sql)
+        end
+        "(#{parts.join(' and ')})"
+      end
+    end
+
+    def !@
+      raise 'Invalid expression'
+    end
+  end
+
+  # Json expression
+  class JsonExpression < Expression
+    def to_sql(sql)
+      func = @props[:function] || 'json_extract'
+
+      "#{func}(#{@members[0].to_sql(sql)}, #{sql.quote(calc_path(sql))})"
+    end
+
+    def calc_path(sql)
+      @members[1..-1].inject(+'$') do |path, m|
+        join_path(path, m, sql)
+      end
+    end
+
+    def join_path(left, right, sql)
+      case right
+      when /^\$/
+        right
+      when /^\[/
+        "#{left}#{right}"
+      when Integer
+        "#{left}[#{right}]"
+      when JsonSubcsriptExpression
+        "#{left}[#{right.to_sql(sql)}]"
+      else
+        "#{left}.#{right}"
+      end
+    end
+
+    def method_missing(sym)
+      JsonExpression.new(*@members, sym, **@props)
+    end
+
+    def [](subscript)
+      JsonExpression.new(*@members, JsonSubcsriptExpression.new(subscript), **@props)
+    end
+  end
+
+  class JsonSubcsriptExpression < Expression
+    def to_sql(sql)
+      case (subscript = @members.first)
+      when Expression
+        subscript.to_sql(sql)
+      else
+        sql.quote(subscript)
+      end
     end
   end
   
@@ -458,7 +565,8 @@ module Eno
       '<'   => '>=',
       '>'   => '<=',
       '<='  => '>',
-      '>='  => '<'
+      '>='  => '<',
+      'like' => 'not like'
     }
     
     def !@
@@ -487,12 +595,25 @@ module Eno
   
   # NotIn expression
   class NotIn < Expression
-    S_NOT_IN  = '%s not in (%s)'
+    S_NOT_IN  = '(%s not in (%s))'
     
     def to_sql(sql)
       S_NOT_IN % [
         sql.quote(@members[0]),
         @members[1..-1].map { |m| sql.quote(m) }.join(S_COMMA)
+      ]
+    end
+  end
+  
+  # NotBetween expression
+  class NotBetween < Expression
+    S_NOT_BETWEEN  = '(%s not between %s and %s)'
+    
+    def to_sql(sql)
+      S_NOT_BETWEEN % [
+        sql.quote(@members[0]),
+        sql.quote(@members[1].begin),
+        sql.quote(@members[1].end)
       ]
     end
   end
@@ -515,7 +636,7 @@ module Eno
     S_WINDOW        = '(%s)'
     S_PARTITION_BY  = 'partition by %s '
     S_ORDER_BY      = 'order by %s '
-    S_RANGE         = 'range %s '
+    S_BETWEEN         = 'range %s '
     
     def range_unbounded
       @range = S_UNBOUNDED
@@ -541,7 +662,7 @@ module Eno
     
     def _range_clause(sql)
       return nil unless @range
-      S_RANGE % @range
+      S_BETWEEN % @range
     end
     
     def method_missing(sym)

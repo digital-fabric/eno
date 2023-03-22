@@ -69,6 +69,22 @@ class OpTest < MiniTest::Test
   def test_cast_shorthand_operator
     assert_sql('select a::integer') { select a^integer }
   end
+
+  def test_fuzzy_equality_operator
+    assert_sql("select (a like '%foo%')") { select a =~ '%foo%' }
+    assert_sql('select (a in (b, c))') { select a =~ [b, c] }
+    assert_sql('select (a in ((select b from c)))') { select a =~ Q { select b; from c } }
+    assert_sql('select ((a.b = 1) and (a.c in (2, 3)))') { select a =~ { b: 1, c: [2, 3] } }
+    assert_sql('select (a between b and c)') { select a =~ (b..c) }
+  end
+
+  def test_negated_fuzzy_equality_operator
+    assert_sql("select (a not like '%foo%')") { select a !~ '%foo%' }
+    assert_sql('select (a not in (b, c))') { select a !~ [b, c] }
+    assert_sql('select (a not in ((select b from c)))') { select a !~ Q { select b; from c } }
+    assert_raises { select a !~ { b: 1, c: [2, 3] } }
+    assert_sql('select (a not between b and c)') { select a !~ (b..c) }
+  end
 end
 
 class CastTest < MiniTest::Test
@@ -146,5 +162,30 @@ end
 class AliasTest < MiniTest::Test
   def test_that_alias_is_escaped_as_identifier
     assert_sql('select a as "b c"') { select a.as :"b c" }
+  end
+end
+
+class JsonTest < MiniTest::Test
+  def test_json_extract
+    assert_sql("select json_extract(record, '$.foo')") { select json(record, '$.foo') }
+    assert_sql("select json_extract(record, '$.foo')") { select json(record, '$.foo') }
+    assert_sql("select json_extract(record, '$.foo')") { select json(record, :foo) }
+    assert_sql("select json_extract(record, '$[0]')") { select json(record, 0) }
+  end
+
+  def test_json_extract_methods
+    assert_sql("select json_extract(record, '$.foo')") { select json(record).foo }
+    assert_sql("select json_extract(record, '$.foo.bar')") { select json(record).foo.bar }
+
+    assert_sql("select json_extract(record, '$[0]')") { select json(record)[0] }
+    assert_sql("select json_extract(record, '$[0].foo')") { select json(record)[0].foo }
+    assert_sql("select json_extract(record, '$.foo[0]')") { select json(record).foo[0] }
+    assert_sql("select json_extract(record, '$.foo[1].bar[2].baz')") { 
+      select json(record).foo[1].bar[2].baz }
+  end
+
+  def test_json_identifier_method
+    assert_sql("select json_extract(record, '$.foo')") { select record.json('foo') }
+    assert_sql("select json_extract(record, '$.foo.bar')") { select record.json.foo.bar }
   end
 end
