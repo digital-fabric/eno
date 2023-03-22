@@ -109,12 +109,12 @@ end
 
 class InTest < MiniTest::Test
   def test_that_in_is_correctly_formatted
-    assert_sql('select * where a in (1, 2, 3)') { where a.in 1, 2, 3 }
-    assert_sql('select * where a not in (1, 2, 3)') { where !a.in(1, 2, 3) }
+    assert_sql('select * where (a in (1, 2, 3))') { where a.in 1, 2, 3 }
+    assert_sql('select * where (a not in (1, 2, 3))') { where !a.in(1, 2, 3) }
   end
 
   def test_that_not_in_is_correcly_formatted
-    assert_sql('select * where a not in (1, 2, 3)') { where a.not_in 1, 2, 3 }
+    assert_sql('select * where (a not in (1, 2, 3))') { where a.not_in 1, 2, 3 }
   end
 end
 
@@ -145,7 +145,7 @@ class ConditionalTest < MiniTest::Test
   end
 
   def test_that_cond_expression_can_be_nested
-    assert_sql("select case when quality not in (1, 4, 5) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value ~ '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
+    assert_sql("select case when (quality not in (1, 4, 5)) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value like '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
       select cond(
         !quality.in(1, 4, 5) => null,
         datatype == 3 => cond(
@@ -187,5 +187,7 @@ class JsonTest < MiniTest::Test
   def test_json_identifier_method
     assert_sql("select json_extract(record, '$.foo')") { select record.json('foo') }
     assert_sql("select json_extract(record, '$.foo.bar')") { select record.json.foo.bar }
+
+    assert_sql("select json_extract(foo.bar, '$.baz')") { select foo.bar.json(:baz) }
   end
 end

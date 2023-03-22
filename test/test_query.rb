@@ -119,7 +119,7 @@ class CustomFunctionTest < MiniTest::Test
   end
 
   def test_that_custom_function_can_be_used_normally
-    assert_sql("select case when quality not in (1, 4, 5) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value ~ '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
+    assert_sql("select case when (quality not in (1, 4, 5)) then null when (datatype = 3) then case when unformatted_value::boolean then 1 else 0 end when (unformatted_value like '^[+-]?([0-9]*[.])?[0-9]+$') then unformatted_value::float else null end as value_float") {
       select cast_value.as value_float
     }
   end
