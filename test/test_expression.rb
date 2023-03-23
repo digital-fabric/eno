@@ -180,6 +180,8 @@ class JsonTest < MiniTest::Test
     assert_sql("select json_extract(record, '$[0]')") { select json(record)[0] }
     assert_sql("select json_extract(record, '$[0].foo')") { select json(record)[0].foo }
     assert_sql("select json_extract(record, '$.foo[0]')") { select json(record).foo[0] }
+    assert_sql("select json_extract(record, '$.foo.bar')") { select json(record).foo['bar'] }
+    assert_sql("select json_extract(record, '$.foo.bar.baz')") { select json(record).foo['bar.baz'] }
     assert_sql("select json_extract(record, '$.foo[1].bar[2].baz')") { 
       select json(record).foo[1].bar[2].baz }
   end
@@ -189,5 +191,24 @@ class JsonTest < MiniTest::Test
     assert_sql("select json_extract(record, '$.foo.bar')") { select record.json.foo.bar }
 
     assert_sql("select json_extract(foo.bar, '$.baz')") { select foo.bar.json(:baz) }
+  end
+
+  def test_json_query
+    assert_sql("select json_extract(record, '$.foo'), json_extract(record, '$.bar') from tbl where (json_extract(record, '$.baz.blah') = 'bleh') order by json_extract(record, '$.stamp') desc") {
+      select json(record).foo, json(record).bar
+      from tbl
+      where json(record).baz.blah == 'bleh'
+      order_by json(record).stamp.desc
+    }
+  end
+
+  def test_json_query_with_json_var
+    assert_sql("select json_extract(record, '$.foo'), json_extract(record, '$.bar') from tbl where (json_extract(record, '$.baz.blah') = 'bleh') order by json_extract(record, '$.stamp') desc") {
+      js = json(record)
+      select js.foo, js.bar
+      from tbl
+      where js.baz.blah == 'bleh'
+      order_by js.stamp.desc
+    }
   end
 end

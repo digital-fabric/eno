@@ -445,7 +445,7 @@ module Eno
         "#{left}#{right}"
       when Integer
         "#{left}[#{right}]"
-      when JsonSubcsriptExpression
+      when JsonSubscriptExpression
         "#{left}[#{right.to_sql(sql)}]"
       else
         "#{left}.#{right}"
@@ -457,11 +457,16 @@ module Eno
     end
 
     def [](subscript)
-      JsonExpression.new(*@members, JsonSubcsriptExpression.new(subscript), **@props)
+      case subscript
+      when String, Symbol
+        JsonExpression.new(*@members, subscript, **@props)
+      else
+        JsonExpression.new(*@members, JsonSubscriptExpression.new(subscript), **@props)
+      end
     end
   end
 
-  class JsonSubcsriptExpression < Expression
+  class JsonSubscriptExpression < Expression
     def to_sql(sql)
       case (subscript = @members.first)
       when Expression
