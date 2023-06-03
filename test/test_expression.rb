@@ -76,6 +76,7 @@ class OpTest < MiniTest::Test
     assert_sql('select (a in ((select b from c)))') { select a =~ Q { select b; from c } }
     assert_sql('select ((a.b = 1) and (a.c in (2, 3)))') { select a =~ { b: 1, c: [2, 3] } }
     assert_sql('select (a between b and c)') { select a =~ (b..c) }
+    assert_sql('select (a >= b and a < c)') { select a =~ (b...c) }
   end
 
   def test_negated_fuzzy_equality_operator
@@ -84,6 +85,7 @@ class OpTest < MiniTest::Test
     assert_sql('select (a not in ((select b from c)))') { select a !~ Q { select b; from c } }
     assert_raises { select a !~ { b: 1, c: [2, 3] } }
     assert_sql('select (a not between b and c)') { select a !~ (b..c) }
+    assert_sql('select (a < b or a >= c)') { select a !~ (b...c) }
   end
 end
 
@@ -115,6 +117,16 @@ class InTest < MiniTest::Test
 
   def test_that_not_in_is_correcly_formatted
     assert_sql('select * where (a not in (1, 2, 3))') { where a.not_in 1, 2, 3 }
+  end
+
+  def test_in_with_range
+    assert_sql('select * where (a between 1 and 3)') { where a.in 1..3 }
+    assert_sql('select * where (a >= 1 and a < 3)')  { where a.in 1...3 }
+  end
+
+  def test_not_in_with_range
+    assert_sql('select * where (a not between 1 and 3)') { where a.not_in 1..3 }
+    assert_sql('select * where (a < 1 or a >= 3)')  { where a.not_in 1...3 }
   end
 end
 

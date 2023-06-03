@@ -253,6 +253,10 @@ module Eno
     # @param *args [Array] expression list
     # @return [Eno::In] IN expression
     def in(*args)
+      if args.size == 1 && (range = args.first).is_a?(Range)
+        return Between.new(self, range)
+      end
+      
       In.new(self, *args)
     end
     
@@ -261,6 +265,10 @@ module Eno
     # @param *args [Array] expression list
     # @return [Eno::In] NOT IN expression
     def not_in(*args)
+      if args.size == 1 && (range = args.first).is_a?(Range)
+        return NotBetween.new(self, range)
+      end
+      
       NotIn.new(self, *args)
     end
   end
@@ -390,13 +398,18 @@ module Eno
   # Between expression
   class Between < Expression
     S_BETWEEN = '(%s between %s and %s)'
+    S_BETWEEN_EXCLUDE_END = '(%s >= %s and %s < %s)'
 
     def to_sql(sql)
-      S_BETWEEN % [
-        sql.quote(@members[0]),
-        sql.quote(@members[1].begin),
-        sql.quote(@members[1].end)
-      ]
+      left = sql.quote(@members[0])
+      range = @members[1]
+      min = sql.quote(range.begin)
+      max = sql.quote(range.end)
+      if range.exclude_end?
+        S_BETWEEN_EXCLUDE_END % [left, min, left, max]
+      else
+        S_BETWEEN % [left, min, max]
+      end
     end
 
     def !@
@@ -613,13 +626,18 @@ module Eno
   # NotBetween expression
   class NotBetween < Expression
     S_NOT_BETWEEN  = '(%s not between %s and %s)'
-    
+    S_NOT_BETWEEN_EXCLUDE_END = '(%s < %s or %s >= %s)'
+
     def to_sql(sql)
-      S_NOT_BETWEEN % [
-        sql.quote(@members[0]),
-        sql.quote(@members[1].begin),
-        sql.quote(@members[1].end)
-      ]
+      left = sql.quote(@members[0])
+      range = @members[1]
+      min = sql.quote(range.begin)
+      max = sql.quote(range.end)
+      if range.exclude_end?
+        S_NOT_BETWEEN_EXCLUDE_END % [left, min, left, max]
+      else
+        S_NOT_BETWEEN % [left, min, max]
+      end
     end
   end
   
