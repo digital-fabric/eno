@@ -101,6 +101,24 @@ class ConvenienceVariablesTest < MiniTest::Test
       select uv^boolean, uv^float
     }
   end
+
+  def test_convenience_variable_reuse
+    assert_sql(<<~SQL
+      select json_extract(record, '$.stamp'), json_extract(record, '$.path') from log
+      where ((json_extract(record, '$.project') = 'nogarus')
+      and (json_extract(record, '$.stamp') between t1 and t2))
+      order by json_extract(record, '$.stamp') desc
+    SQL
+    ) {
+      rec = json(record)
+      stamp = rec.stamp
+    
+      select stamp, rec.path
+      from log
+      where (rec.project == 'nogarus') & (stamp.in t1..t2)
+      order_by stamp.desc
+    }
+  end
 end
 
 class CustomFunctionTest < MiniTest::Test
