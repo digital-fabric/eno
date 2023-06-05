@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative '../ext'
-import('../../lib/eno/pg')
+require_relative '../helper'
+require 'eno/pg'
 
 require 'pp'
 
