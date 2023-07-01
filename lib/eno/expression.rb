@@ -4,7 +4,7 @@ module Eno
   # Abstract expression class. All SQL expressions are derived from this class.
   class Expression
     attr_reader :members, :props
-    
+
     # Initializes an expression with the given arguments.
     #
     # @param *members [Array] expression members
@@ -14,7 +14,7 @@ module Eno
       @members = members
       @props = props
     end
-    
+
     # Returns an aliased copy of self, or self alias as the given block.
     #
     # @param sym [Symbol, String, nil] alias for self
@@ -27,14 +27,14 @@ module Eno
         Alias.new(self, Query.new(&block))
       end
     end
-    
+
     # Returns a `DESC` expression.
     #
     # @return [Eno::Desc] DESC expression
     def desc
       Desc.new(self)
     end
-    
+
     # Returns a `OVER` expression.
     #
     # @param sym [Symbol, String, nil] OVER target
@@ -43,7 +43,7 @@ module Eno
     def over(sym = nil, &block)
       Over.new(self, sym || WindowExpression.new(&block))
     end
-    
+
     S_EQ    = '='
     S_TILDE = '~'
     S_NEQ   = '<>'
@@ -59,7 +59,7 @@ module Eno
     S_DIV   = '/'
     S_MOD   = '%'
     S_LIKE  = 'like'
-    
+
     # Returns an operator expression using `==`.
     #
     # @param expr2 [any] Right hand expression
@@ -67,7 +67,7 @@ module Eno
     def ==(expr2)
       Operator.new(S_EQ, self, expr2)
     end
-    
+
     # Returns an operator expression using `=~`.
     #
     # @param expr2 [any] Right hand expression
@@ -92,7 +92,7 @@ module Eno
     def !~(expr2)
       !(self =~ expr2)
     end
-    
+
     # Returns an operator expression using `!=`.
     #
     # @param expr2 [any] Right hand expression
@@ -100,7 +100,7 @@ module Eno
     def !=(expr2)
       Operator.new(S_NEQ, self, expr2)
     end
-    
+
     # Returns an operator expression using `<`.
     #
     # @param expr2 [any] Right hand expression
@@ -108,7 +108,7 @@ module Eno
     def <(expr2)
       Operator.new(S_LT, self, expr2)
     end
-    
+
     # Returns an operator expression using `>`.
     #
     # @param expr2 [any] Right hand expression
@@ -116,7 +116,7 @@ module Eno
     def >(expr2)
       Operator.new(S_GT, self, expr2)
     end
-    
+
     # Returns an operator expression using `<=`.
     #
     # @param expr2 [any] Right hand expression
@@ -124,7 +124,7 @@ module Eno
     def <=(expr2)
       Operator.new(S_LTE, self, expr2)
     end
-    
+
     # Returns an operator expression using `>=`.
     #
     # @param expr2 [any] Right hand expression
@@ -132,7 +132,7 @@ module Eno
     def >=(expr2)
       Operator.new(S_GTE, self, expr2)
     end
-    
+
     # Returns an operator expression using `AND`.
     #
     # @param expr2 [any] Right hand expression
@@ -140,7 +140,7 @@ module Eno
     def &(expr2)
       Operator.new(S_AND, self, expr2)
     end
-    
+
     # Returns an operator expression using `OR`.
     #
     # @param expr2 [any] Right hand expression
@@ -148,7 +148,7 @@ module Eno
     def |(expr2)
       Operator.new(S_OR, self, expr2)
     end
-    
+
     # Returns an operator expression using `+`.
     #
     # @param expr2 [any] Right hand expression
@@ -156,7 +156,7 @@ module Eno
     def +(expr2)
       Operator.new(S_PLUS, self, expr2)
     end
-    
+
     # Returns an operator expression using `-`.
     #
     # @param expr2 [any] Right hand expression
@@ -164,7 +164,7 @@ module Eno
     def -(expr2)
       Operator.new(S_MINUS, self, expr2)
     end
-    
+
     # Returns an operator expression using `*`.
     #
     # @param expr2 [any] Right hand expression
@@ -172,7 +172,7 @@ module Eno
     def *(expr2)
       Operator.new(S_MUL, self, expr2)
     end
-    
+
     # Returns an operator expression using `/`.
     #
     # @param expr2 [any] Right hand expression
@@ -180,7 +180,7 @@ module Eno
     def /(expr2)
       Operator.new(S_DIV, self, expr2)
     end
-    
+
     # Returns an operator expression using `%`.
     #
     # @param expr2 [any] Right hand expression
@@ -188,7 +188,7 @@ module Eno
     def %(expr2)
       Operator.new(S_MOD, self, expr2)
     end
-    
+
     # Returns an `CAST` expression.
     #
     #     Q { select a^integer }
@@ -198,7 +198,7 @@ module Eno
     def ^(expr2)
       CastShorthand.new(self, expr2)
     end
-    
+
     # Returns a `NOT expression`.
     #
     #     Q { select a & !b }
@@ -207,21 +207,21 @@ module Eno
     def !@
       Not.new(self)
     end
-    
+
     # Returns a `IS NULL` expression.
     #
     # @return [Eno::IsNull] IS NULL expression
     def null?
       IsNull.new(self)
     end
-    
+
     # Returns a `IS NOT NULL` expression.
     #
     # @return [Eno::IsNotNull] IS NOT NULL expression
     def not_null?
       IsNotNull.new(self)
     end
-    
+
     # Returns a `JOIN` expression with the given arguments.
     #
     # @param sym [Symbol, String, Eno::Expression] join expression
@@ -230,7 +230,7 @@ module Eno
     def join(sym, **props)
       Join.new(self, sym, **props)
     end
-    
+
     # Returns a `JOIN` expression with the given arguments.
     #
     # @param sym [Symbol, String, Eno::Expression] join expression
@@ -239,7 +239,7 @@ module Eno
     def inner_join(sym, **props)
       join(sym, **props.merge(type: :inner))
     end
-    
+
     # Returns a `CAST` expression.
     #
     # @param sym [Symbol, String] cast type
@@ -247,7 +247,7 @@ module Eno
     def cast(sym)
       Cast.new(self, sym)
     end
-    
+
     # Returns a `IN` expression.
     #
     # @param *args [Array] expression list
@@ -256,10 +256,10 @@ module Eno
       if args.size == 1 && (range = args.first).is_a?(Range)
         return Between.new(self, range)
       end
-      
+
       In.new(self, *args)
     end
-    
+
     # Returns a `NOT IN` expression.
     #
     # @param *args [Array] expression list
@@ -268,15 +268,15 @@ module Eno
       if args.size == 1 && (range = args.first).is_a?(Range)
         return NotBetween.new(self, range)
       end
-      
+
       NotIn.new(self, *args)
     end
   end
-  
+
   ############################################################
-  
+
   S_COMMA       = ', '
-  
+
   # Alias expression
   class Alias < Expression
     S_AS = '%s as %s'
@@ -284,18 +284,18 @@ module Eno
       S_AS % [sql.quote(@members[0]), sql.quote(@members[1])]
     end
   end
-  
+
   # Case expression
   class Case < Expression
     def initialize(conditions)
       @props = conditions
     end
-    
+
     S_WHEN  = 'when %s then %s'
     S_ELSE  = 'else %s'
     S_CASE  = 'case %s end'
     S_SPACE = ' '
-    
+
     def to_sql(sql)
       conditions = @props.inject([]) { |a, (k, v)|
         if k.is_a?(Symbol) && k == :default
@@ -307,43 +307,43 @@ module Eno
       if default = @props[:default]
         conditions << (S_ELSE % sql.quote(default))
       end
-      
+
       S_CASE % conditions.join(S_SPACE)
     end
   end
-  
+
   # Cast expression
   class Cast < Expression
     S_CAST = 'cast (%s as %s)'
-    
+
     def to_sql(sql)
       S_CAST % [sql.quote(@members[0]), sql.quote(@members[1])]
     end
   end
-  
+
   # CastShorthand expression
   class CastShorthand < Expression
     S_CAST = '%s::%s'
-    
+
     def to_sql(sql)
       S_CAST % [sql.quote(@members[0]), sql.quote(@members[1])]
     end
   end
-  
+
   # Desc expression
   class Desc < Expression
     S_DESC = '%s desc'
-    
+
     def to_sql(sql)
       S_DESC % sql.quote(@members[0])
     end
   end
-  
+
   # Function call expression
   class FunctionCall < Expression
     S_FUN_NO_ARGS = '%s()'
     S_FUN         = '%s(%s)'
-    
+
     def to_sql(sql)
       fun = @members[0]
       if @members.size == 2 && Identifier === @members.last && @members.last._empty_placeholder?
@@ -356,19 +356,19 @@ module Eno
       end
     end
   end
-  
+
   # Identifier expression
   class Identifier < Expression
     def to_sql(sql)
       # "\"#{@members[0].to_sym}\""
       sql.quote(@members[0].to_sym)
     end
-    
+
     def method_missing(sym)
       super if sym == :to_hash
       Identifier.new("#{@members[0]}.#{sym}")
     end
-    
+
     def _empty_placeholder?
       m = @members[0]
       Symbol === m && m == :_
@@ -378,18 +378,18 @@ module Eno
       JsonExpression.new(self, *args, **props)
     end
   end
-  
+
   # In expression
   class In < Expression
     S_IN = '(%s in (%s))'
-    
+
     def to_sql(sql)
       S_IN % [
         sql.quote(@members[0]),
         @members[1..-1].map { |m| sql.quote(m) }.join(S_COMMA)
       ]
     end
-    
+
     def !@
       NotIn.new(*@members)
     end
@@ -489,7 +489,7 @@ module Eno
       end
     end
   end
-  
+
   # IsNotNull expression
   class IsNotNull < Expression
     S_NOT_NULL = '(%s is not null)'
@@ -497,20 +497,20 @@ module Eno
       S_NOT_NULL % sql.quote(@members[0])
     end
   end
-  
+
   # IsNull expression
   class IsNull < Expression
     S_NULL = '(%s is null)'
-    
+
     def to_sql(sql)
       S_NULL % sql.quote(@members[0])
     end
-    
+
     def !@
       IsNotNull.new(@members[0])
     end
   end
-  
+
   # Join expression
   class Join < Expression
     H_JOIN_TYPES = {
@@ -518,11 +518,11 @@ module Eno
       inner:  'inner join',
       outer:  'outer join'
     }
-    
+
     S_JOIN  = '%s %s %s %s'
     S_ON    = 'on %s'
     S_USING = 'using (%s)'
-    
+
     def to_sql(sql)
       (
         S_JOIN % [
@@ -533,7 +533,7 @@ module Eno
         ]
       ).strip
     end
-    
+
     def condition_sql(sql)
       if @props[:on]
         S_ON % sql.quote(@props[:on])
@@ -545,18 +545,18 @@ module Eno
       end
     end
   end
-  
+
   # Literal expression
   class Literal < Expression
     def to_sql(sql)
       sql.quote(@members[0])
     end
   end
-  
+
   # Operator expression
   class Operator < Expression
     attr_reader :op
-    
+
     def initialize(op, *members, **props)
       if Operator === members[0] && op == members[0].op
         members = members[0].members + members[1..-1]
@@ -564,19 +564,19 @@ module Eno
       if Operator === members.last && op == members.last.op
         members = members[0..-2] + members.last.members
       end
-      
+
       super(*members, **props)
       @op = op
     end
-    
+
     S_OP = ' %s '
     S_OP_EXPR = '(%s)'
-    
+
     def to_sql(sql)
       op_s = S_OP % @op
       S_OP_EXPR % @members.map { |m| sql.quote(m) }.join(op_s)
     end
-    
+
     INVERSE_OP = {
       '='   => '<>',
       '<>'  => '=',
@@ -586,35 +586,35 @@ module Eno
       '>='  => '<',
       'like' => 'not like'
     }
-    
+
     def !@
       inverse = INVERSE_OP[@op]
       inverse ? Operator.new(inverse, *@members) : super
     end
   end
-  
+
   # Over expression
   class Over < Expression
     S_OVER = '%s over %s'
-    
+
     def to_sql(sql)
       S_OVER % [sql.quote(@members[0]), sql.quote(@members[1])]
     end
   end
-  
+
   # Not expression
   class Not < Expression
     S_NOT = '(not %s)'
-    
+
     def to_sql(sql)
       S_NOT % sql.quote(@members[0])
     end
   end
-  
+
   # NotIn expression
   class NotIn < Expression
     S_NOT_IN  = '(%s not in (%s))'
-    
+
     def to_sql(sql)
       S_NOT_IN % [
         sql.quote(@members[0]),
@@ -622,7 +622,7 @@ module Eno
       ]
     end
   end
-  
+
   # NotBetween expression
   class NotBetween < Expression
     S_NOT_BETWEEN  = '(%s not between %s and %s)'
@@ -640,31 +640,31 @@ module Eno
       end
     end
   end
-  
+
   # Window expression
   class WindowExpression < Expression
     def initialize(&block)
       instance_eval(&block)
     end
-    
+
     def partition_by(*args)
       @partition_by = args
     end
-    
+
     def order_by(*args)
       @order_by = args
     end
-    
+
     S_UNBOUNDED     = 'between unbounded preceding and unbounded following'
     S_WINDOW        = '(%s)'
     S_PARTITION_BY  = 'partition by %s '
     S_ORDER_BY      = 'order by %s '
     S_BETWEEN         = 'range %s '
-    
+
     def range_unbounded
       @range = S_UNBOUNDED
     end
-    
+
     def to_sql(sql)
       S_WINDOW % [
         _partition_by_clause(sql),
@@ -672,51 +672,51 @@ module Eno
         _range_clause(sql)
       ].join.strip
     end
-    
+
     def _partition_by_clause(sql)
       return nil unless @partition_by
       S_PARTITION_BY % @partition_by.map { |e| sql.quote(e) }.join(S_COMMA)
     end
-    
+
     def _order_by_clause(sql)
       return nil unless @order_by
       S_ORDER_BY % @order_by.map { |e| sql.quote(e) }.join(S_COMMA)
     end
-    
+
     def _range_clause(sql)
       return nil unless @range
       S_BETWEEN % @range
     end
-    
+
     def method_missing(sym)
       super if sym == :to_hash
       Identifier.new(sym)
     end
   end
-  
+
   ############################################################
-  
+
   # Combination expression
   class Combination < Expression
     S_COMBINATION     = ' %s '
     S_COMBINATION_ALL = ' %s all '
-    
+
     def to_sql(sql)
       union = (@props[:all] ? S_COMBINATION_ALL : S_COMBINATION) % @props[:kind]
       @members.map { |m| sql.quote(m) }.join(union)
     end
   end
-  
+
   # From expression
   class From < Expression
     S_FROM  = 'from %s'
     S_T1    = '%s t1'
     S_ALIAS = '%s %s'
-    
+
     def to_sql(sql)
       S_FROM % @members.map { |m| member_sql(m, sql) }.join(S_COMMA)
     end
-    
+
     def member_sql(member, sql)
       if Query === member
         S_T1 % sql.quote(member)
@@ -727,38 +727,46 @@ module Eno
       end
     end
   end
-  
+
   # Limit expression
   class Limit < Expression
     S_LIMIT = 'limit %d'
-    
+
     def to_sql(sql)
       S_LIMIT % @members[0]
     end
   end
-  
+
   # OrderBy expression
   class OrderBy < Expression
     S_ORDER_BY = 'order by %s'
-    
+
     def to_sql(sql)
       S_ORDER_BY % @members.map { |e| sql.quote(e) }.join(S_COMMA)
     end
   end
-  
+
+  class GroupBy < Expression
+    S_GROUP_BY = 'group by %s'
+
+    def to_sql(sql)
+      S_GROUP_BY % @members.map { |e| sql.quote(e) }.join(S_COMMA)
+    end
+  end
+
   # Select expression
   class Select < Expression
     S_SELECT              = 'select %s%s'
     S_DISTINCT            = 'distinct '
     S_DISTINCT_ON         = 'distinct on (%s) '
     S_DISTINCT_ON_SINGLE  = 'distinct on %s '
-    
+
     def to_sql(sql)
       S_SELECT % [
         distinct_clause(sql), @members.map { |e| sql.quote(e) }.join(S_COMMA)
       ]
     end
-    
+
     def distinct_clause(sql)
       case (on = @props[:distinct])
       when nil
@@ -772,26 +780,26 @@ module Eno
       end
     end
   end
-  
+
   # Where expression
   class Where < Expression
     S_WHERE = 'where %s'
     S_AND   = ' and '
-    
+
     def to_sql(sql)
       S_WHERE % @members.map { |e| sql.quote(e) }.join(S_AND)
     end
   end
-  
+
   # Window expression
   class Window < Expression
     def initialize(sym, &block)
       super(sym)
       @block = block
     end
-    
+
     S_WINDOW  = 'window %s as %s'
-    
+
     def to_sql(sql)
       S_WINDOW % [
         sql.quote(@members.first),
@@ -799,11 +807,11 @@ module Eno
       ]
     end
   end
-  
+
   # With expression
   class With < Expression
     S_WITH    = 'with %s'
-    
+
     def to_sql(sql)
       S_WITH % @members.map { |e| sql.quote(e) }.join(S_COMMA)
     end

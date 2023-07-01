@@ -12,7 +12,7 @@ module Eno
       @ctx = ctx
       @block = block
     end
-    
+
     # Renders the query as an SQL statement.
     #
     # @param escape_proc [Proc, nil] proc for escaping literal strings
@@ -22,7 +22,7 @@ module Eno
       r = SQL.new(escape_proc: escape_proc, **@ctx.merge(ctx))
       r.to_sql(&@block)
     end
-    
+
     # Adds an alias to the query when used as a subquery.
     #
     # @param sym [Symbol, String] subquery alias
@@ -30,7 +30,7 @@ module Eno
     def as(sym)
       Alias.new(self, sym)
     end
-    
+
     # Adds where conditions to the query.
     #
     # @param &block [Proc] where block
@@ -42,7 +42,7 @@ module Eno
         where instance_eval(&block)
       }
     end
-    
+
     # Mutates the query by executing the given block and returning the modified
     # query.
     #
@@ -55,7 +55,7 @@ module Eno
         instance_eval(&block)
       }
     end
-    
+
     # Returns a `UNION` expression between self and one or more other queries. The
     # additional query or queries for the union expression can be specified as
     # arguments or as a block:
@@ -76,7 +76,7 @@ module Eno
       Query.new(**@ctx) { union q1, *queries, **props }
     end
     alias_method :|, :union
-    
+
     # Returns a `UNION ALL` expression between self and one or more other queries.
     # The additional query or queries for the union expression can be specified
     # as arguments or as a block.
@@ -88,7 +88,7 @@ module Eno
     def union_all(*queries, &block)
       union(*queries, all: true, &block)
     end
-    
+
     # Returns a `INTERSECT` expression between self and one or more other
     # queries. The additional query or queries for the intersect expression can
     # be specified as arguments or as a block.
@@ -103,7 +103,7 @@ module Eno
       Query.new(**@ctx) { intersect q1, *queries, **props }
     end
     alias_method :&, :intersect
-    
+
     # Returns a `INTERSECT ALL` expression between self and one or more other
     # queries. The additional query or queries for the intersect expression can be
     # specified as arguments or as a block.
@@ -114,7 +114,7 @@ module Eno
     def intersect_all(*queries, &block)
       intersect(*queries, all: true, &block)
     end
-    
+
     # Returns a `EXCEPT` expression between self and one or more other queries.
     # The additional query or queries for the except expression can be specified
     # as arguments or as a block.
@@ -128,7 +128,7 @@ module Eno
       Query.new(**@ctx) { except q1, *queries, **props }
     end
     alias_method :"^", :except
-    
+
     # Returns a `EXCEPT ALL` expression between self and one or more other queries.
     # The additional query or queries for the except expression can be specified
     # as arguments or as a block.

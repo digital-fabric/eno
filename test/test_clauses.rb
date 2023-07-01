@@ -156,13 +156,13 @@ class DSLTest < MiniTest::Test
       end
     end
   end
-  
+
   class JSONBExpression < Eno::Expression
     def to_sql(sql)
       "#{sql.quote(@members[0])}->>'#{sql.quote(@members[1])}'"
     end
   end
-    
+
   def test_that_dsl_can_be_extended
     assert_sql("select attributes->>'path'") {
       select attributes[path]
@@ -238,7 +238,7 @@ class ContextTest < MiniTest::Test
       'select a, b from nodes where (sample_rate < 42)',
       query.to_sql(field: :sample_rate, value: 42)
     )
-  
+
     assert_equal(
       'select a, b from nodes where (deadband < 42)',
       query.to_sql(value: 42)
@@ -339,7 +339,7 @@ class ExtractEpoch < Eno::Expression
       ExtractEpoch.new(sym)
     end
   end
-    
+
   def to_sql(sql)
     "extract (epoch from #{sql.quote(@members[0])})::integer"
   end

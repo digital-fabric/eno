@@ -37,7 +37,7 @@ class ContextTest < MiniTest::Test
       'select a, b from nodes where (sample_rate < 42)',
       query.to_sql(field: :sample_rate, value: 42)
     )
-  
+
     assert_equal(
       'select a, b from nodes where (deadband < 42)',
       query.to_sql(value: 42)
@@ -112,7 +112,7 @@ class ConvenienceVariablesTest < MiniTest::Test
     ) {
       rec = json(record)
       stamp = rec.stamp
-    
+
       select stamp, rec.path
       from log
       where (rec.project == 'nogarus') & (stamp.in t1..t2)
@@ -124,7 +124,7 @@ end
 class CustomFunctionTest < MiniTest::Test
   class Eno::SQL
     FLOAT_RE = '^[+-]?([0-9]*[.])?[0-9]+$'.freeze
-    
+
     def cast_value
       uv = unformatted_value
       cond(
@@ -283,7 +283,7 @@ class UseCasesTest < MiniTest::Test
       "extract (epoch from #{sql.quote(@members[0])})::integer"
     end
   end
-  
+
   def test_1
     assert_sql("select extract (epoch from stamp)::integer as stamp, quality, value, unformatted_value, datatype from states where ((path = '/r1') and (stamp >= '2019-01-01 00:00:00+00') and (stamp < '2019-01-02 00:00:00+00')) order by stamp desc limit 1") {
       select extract_epoch_from(stamp).as(stamp), quality, value, unformatted_value, datatype
@@ -335,5 +335,49 @@ class UseCasesTest < MiniTest::Test
               }).as(cur_prev_diff)
       from products.inner_join product_groups, using: group_id
      }
+  end
+
+  def test_5
+    # https://www.reddit.com/r/ruby/comments/14lzlua/an_opensourced_ruby_dsl_for_composing/
+
+    start_year = 2016
+    end_year = 2020
+
+    assert_sql(
+      "with subquery0 as (
+         select
+           person,
+           year,
+           sum(amount) as amount
+         from entries
+         where (year between 2016 and 2020)
+         group by person, year
+       )
+       select
+         person,
+         case when (year = 2016) then sum(amount) else 0 end as year_2016,
+         case when (year = 2017) then sum(amount) else 0 end as year_2017,
+         case when (year = 2018) then sum(amount) else 0 end as year_2018,
+         case when (year = 2019) then sum(amount) else 0 end as year_2019,
+         case when (year = 2020) then sum(amount) else 0 end as year_2020
+       from subquery0
+       group by person") {
+      
+      with subquery0.as {
+        select person, year, sum(amount).as(:amount)
+        from entries
+        where year =~ (start_year..end_year)
+        group_by person, year
+      }
+
+      select person, *(start_year..end_year).map { |y|
+        cond(
+          (year == y) => sum(amount),
+          default => 0
+        ).as :"year_#{y}"
+      }
+      from subquery0
+      group_by person
+    }
   end
 end
