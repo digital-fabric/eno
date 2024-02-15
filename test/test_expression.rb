@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative './helper'
+require 'json'
 
 class ExpressionTest < MiniTest::Test
   def test_functions
@@ -174,6 +175,29 @@ end
 class AliasTest < MiniTest::Test
   def test_that_alias_is_escaped_as_identifier
     assert_sql('select a as "b c"') { select a.as :"b c" }
+  end
+end
+
+class CustomExpressionTest < MiniTest::Test
+  def test_custom_expression_definition_simple
+    q = ->(sql) {
+      def expr1(x); a == x; end
+
+      select expr1(1)
+    }
+    assert_sql('select (a = 1)', &q)
+  end
+
+  def test_custom_expression_json_patch
+    q = ->(sql) {
+      def patch(v1, v2)
+        v2 = v2.to_json if !v2.is_a?(String)
+        @self.json_patch(v1, v2)
+      end
+
+      select patch(record, { a: 1, b: 2 })
+    }
+    assert_sql("select json_patch(record, '{\"a\":1,\"b\":2}')", &q)
   end
 end
 

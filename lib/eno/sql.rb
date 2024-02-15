@@ -11,6 +11,7 @@ module Eno
     def initialize(escape_proc: nil, **ctx)
       @escape_proc = escape_proc
       @ctx = ctx
+      @self = self
     end
 
     def to_sql(&block)
@@ -93,30 +94,39 @@ module Eno
         props = {}
       end
       @select = Select.new(*members, **props)
+      self
     end
 
     def from(*members, **props)
       @from = From.new(*members, **props)
+      self
+    end
+
+    def hash_to_condition(hash)
+      members = hash.map do |k, v|
+        ident = Identifier.new(k)
+        case v
+        when Array, Regexp
+          ident =~ v
+        when nil
+          ident.null?
+        else
+          ident == v
+        end
+      end
+      Expression.and(*members)
     end
 
     def where(expr)
       if expr.is_a?(Hash)
-        members = expr.map do |k, v|
-          ident = Identifier.new(k)
-          case v
-          when Array, Regexp
-            ident =~ v
-          else
-            ident == v
-          end
-        end
-        expr = Expression.and(*members)
+        expr = hash_to_condition(expr)
       end
       if @where
         @where.members << expr
       else
         @where = Where.new(expr)
       end
+      self
     end
 
     def window(sym, &block)

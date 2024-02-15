@@ -145,7 +145,7 @@ module Eno
     # @param *members [Array<any>] expressions
     # @return [Eno::Operator] AND expression
     def self.and(*members)
-      Operator.new(S_AND, *members)
+      members.size == 1 ? members.first : Operator.new(S_AND, *members)
     end
 
     # Returns an operator expression using `OR`.

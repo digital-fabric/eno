@@ -112,7 +112,15 @@ class MutationTest < MiniTest::Test
     assert_equal('select a from foo where ((a = 1) and (b = 2))', q.to_sql)
 
     q.where!(c: 3)
-    assert_equal('select a from foo where ((a = 1) and (b = 2)) and ((c = 3))', q.to_sql)
+    assert_equal('select a from foo where ((a = 1) and (b = 2)) and (c = 3)', q.to_sql)
+  end
+end
+
+class ChainedClausesTest < MiniTest::Test
+  def test_chained_clauses
+    assert_sql('select a, b, c from d where (e is null)') {
+      select(a, b, c).from(d).where(e: nil)
+    }
   end
 end
 
