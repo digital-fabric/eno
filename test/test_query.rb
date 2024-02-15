@@ -92,6 +92,28 @@ class MutationTest < MiniTest::Test
     assert_equal('select a from b', q.to_sql)
     assert_equal('select a from c', q2.to_sql)
   end
+
+  def test_direct_mutation_where
+    q = Q { select a; from b }
+    assert_equal('select a from b', q.to_sql)
+
+    q.where! { a == 1 }
+    assert_equal('select a from b where (a = 1)', q.to_sql)
+
+    q.where! { c == 2 }
+    assert_equal('select a from b where (a = 1) and (c = 2)', q.to_sql)
+  end
+
+  def test_direct_mutation_where
+    q = Q { select a; from foo }
+    assert_equal('select a from foo', q.to_sql)
+
+    q.where!(a: 1, b: 2)
+    assert_equal('select a from foo where ((a = 1) and (b = 2))', q.to_sql)
+
+    q.where!(c: 3)
+    assert_equal('select a from foo where ((a = 1) and (b = 2)) and ((c = 3))', q.to_sql)
+  end
 end
 
 class ConvenienceVariablesTest < MiniTest::Test

@@ -141,6 +141,13 @@ module Eno
       Operator.new(S_AND, self, expr2)
     end
 
+    ## Returns an AND expression for two or more sub-expressions.
+    # @param *members [Array<any>] expressions
+    # @return [Eno::Operator] AND expression
+    def self.and(*members)
+      Operator.new(S_AND, *members)
+    end
+
     # Returns an operator expression using `OR`.
     #
     # @param expr2 [any] Right hand expression

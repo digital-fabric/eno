@@ -31,16 +31,30 @@ module Eno
       Alias.new(self, sym)
     end
 
-    # Adds where conditions to the query.
+    # Returns a mutated query with additional where conditions.
     #
     # @param &block [Proc] where block
-    # @return [Eno::Query] modified query
+    # @return [Eno::Query] mutated query
     def where(&block)
       old_block = @block
       Query.new(**@ctx) {
         instance_eval(&old_block)
         where instance_eval(&block)
       }
+    end
+
+    # Adds where conditions to the query itself.
+    #
+    # @param conds [Hash] optional where hash
+    # @param &block [Proc] optional where block
+    # @return [Eno::Query] self
+    def where!(conds = nil, &block)
+      old_block = @block
+      @block = proc {
+        instance_eval(&old_block) if old_block
+        where(conds ? conds : instance_eval(&block))
+      }
+      self
     end
 
     # Mutates the query by executing the given block and returning the modified

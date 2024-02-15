@@ -143,6 +143,18 @@ class WhereTest < MiniTest::Test
       where b + c == 42
     }
   end
+
+  def test_that_where_accepts_keyword_arguments
+    assert_sql('select * from a where ((a = 1) and (b = 2))') {
+      from a
+      where a: 1, b: 2
+    }
+
+    assert_sql('select * from a where ((a in (1, 2, 3)) and (b = 2))') {
+      from a
+      where a: [1, 2, 3], b: 2
+    }
+  end
 end
 
 class DSLTest < MiniTest::Test

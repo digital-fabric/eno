@@ -100,6 +100,18 @@ module Eno
     end
 
     def where(expr)
+      if expr.is_a?(Hash)
+        members = expr.map do |k, v|
+          ident = Identifier.new(k)
+          case v
+          when Array, Regexp
+            ident =~ v
+          else
+            ident == v
+          end
+        end
+        expr = Expression.and(*members)
+      end
       if @where
         @where.members << expr
       else
