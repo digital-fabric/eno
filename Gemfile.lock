@@ -6,7 +6,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    minitest (5.18.0)
+    minitest (5.22.2)
     pg (1.5.3)
     rake (13.0.6)
     yard (0.9.34)
@@ -16,7 +16,7 @@ PLATFORMS
 
 DEPENDENCIES
   eno!
-  minitest (= 5.18.0)
+  minitest (= 5.22.2)
   pg (= 1.5.3)
   rake (~> 13.0.6)
   yard (= 0.9.34)

@@ -2,7 +2,7 @@
 
 require_relative './helper'
 
-class ContextTest < MiniTest::Test
+class ContextTest < Minitest::Test
   def test_that_context_passed_can_be_used_in_query
     query = Q(tbl: :nodes, field: :sample_rate, value: 42) {
       select a, b
@@ -63,7 +63,7 @@ class ContextTest < MiniTest::Test
   end
 end
 
-class MutationTest < MiniTest::Test
+class MutationTest < Minitest::Test
   def test_that_query_can_further_refined_with_where_clause
     q = Q {
       select a, b
@@ -116,7 +116,7 @@ class MutationTest < MiniTest::Test
   end
 end
 
-class ChainedClausesTest < MiniTest::Test
+class ChainedClausesTest < Minitest::Test
   def test_chained_clauses
     assert_sql('select a, b, c from d where (e is null)') {
       select(a, b, c).from(d).where(e: nil)
@@ -124,7 +124,7 @@ class ChainedClausesTest < MiniTest::Test
   end
 end
 
-class ConvenienceVariablesTest < MiniTest::Test
+class ConvenienceVariablesTest < Minitest::Test
   def test_that_convenience_variables_do_not_change_query
     assert_sql('select unformatted_value::boolean, unformatted_value::float') {
       uv = unformatted_value
@@ -151,7 +151,7 @@ class ConvenienceVariablesTest < MiniTest::Test
   end
 end
 
-class CustomFunctionTest < MiniTest::Test
+class CustomFunctionTest < Minitest::Test
   class Eno::SQL
     FLOAT_RE = '^[+-]?([0-9]*[.])?[0-9]+$'.freeze
 
@@ -173,7 +173,7 @@ class CustomFunctionTest < MiniTest::Test
   end
 end
 
-class CombinationTest < MiniTest::Test
+class CombinationTest < Minitest::Test
   def test_union
     query = Q { select a }.union { select b}
     assert_equal("(select a) union (select b)", query.to_sql)
@@ -301,7 +301,7 @@ class CombinationTest < MiniTest::Test
   end
 end
 
-class UseCasesTest < MiniTest::Test
+class UseCasesTest < Minitest::Test
   class Eno::SQL
     def extract_epoch_from(sym)
       ExtractEpoch.new(sym)

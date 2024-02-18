@@ -3,7 +3,7 @@
 require_relative './helper'
 require 'json'
 
-class ExpressionTest < MiniTest::Test
+class ExpressionTest < Minitest::Test
   def test_functions
     assert_sql('select foo(bar)') { select foo(bar) }
     assert_sql('select foo(bar, \'baz\')') { select foo(bar, 'baz') }
@@ -38,7 +38,7 @@ class ExpressionTest < MiniTest::Test
   end
 end
 
-class OpTest < MiniTest::Test
+class OpTest < Minitest::Test
   def test_comparison_operators
     assert_sql('select (a = b)') { select a == b }
     assert_sql('select (a = b)') { select !(a != b) }
@@ -90,7 +90,7 @@ class OpTest < MiniTest::Test
   end
 end
 
-class CastTest < MiniTest::Test
+class CastTest < Minitest::Test
   def test_that_cast_is_correctly_formatted
     assert_sql('select cast (a as b)') { select a.cast(b) }
     assert_sql('select cast (123 as float)') { select _l(123).cast(float) }
@@ -110,7 +110,7 @@ class CastTest < MiniTest::Test
   end
 end
 
-class InTest < MiniTest::Test
+class InTest < Minitest::Test
   def test_that_in_is_correctly_formatted
     assert_sql('select * where (a in (1, 2, 3))') { where a.in 1, 2, 3 }
     assert_sql('select * where (a not in (1, 2, 3))') { where !a.in(1, 2, 3) }
@@ -131,7 +131,7 @@ class InTest < MiniTest::Test
   end
 end
 
-class LiteralTest < MiniTest::Test
+class LiteralTest < Minitest::Test
   def test_that_numbers_are_correctly_quoted
     assert_sql('select 123') { select 123 }
     assert_sql('select 123') { select _l(123) }
@@ -147,7 +147,7 @@ class LiteralTest < MiniTest::Test
   end
 end
 
-class ConditionalTest < MiniTest::Test
+class ConditionalTest < Minitest::Test
   def test_that_cond_expression_is_correctly_formatted
     assert_sql('select case when (a < b) then c else d end') {
       select cond(
@@ -172,13 +172,13 @@ class ConditionalTest < MiniTest::Test
   end
 end
 
-class AliasTest < MiniTest::Test
+class AliasTest < Minitest::Test
   def test_that_alias_is_escaped_as_identifier
     assert_sql('select a as "b c"') { select a.as :"b c" }
   end
 end
 
-class CustomExpressionTest < MiniTest::Test
+class CustomExpressionTest < Minitest::Test
   def test_custom_expression_definition_simple
     q = ->(sql) {
       def expr1(x); a == x; end
@@ -201,7 +201,7 @@ class CustomExpressionTest < MiniTest::Test
   end
 end
 
-class JsonTest < MiniTest::Test
+class JsonTest < Minitest::Test
   def test_json_extract
     assert_sql("select json_extract(record, '$.foo')") { select json(record, '$.foo') }
     assert_sql("select json_extract(record, '$.foo')") { select json(record, '$.foo') }

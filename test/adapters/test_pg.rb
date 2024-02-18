@@ -5,7 +5,7 @@ require 'eno/pg'
 
 require 'pp'
 
-class PostgresTest < MiniTest::Test
+class PostgresTest < Minitest::Test
   DB = PG.connect(
     host:     '/tmp',
     user:     'reality',

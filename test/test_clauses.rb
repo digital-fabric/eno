@@ -2,7 +2,7 @@
 
 require_relative './helper'
 
-class SelectTest < MiniTest::Test
+class SelectTest < Minitest::Test
   def test_that_no_from_select_is_supported
     assert_sql('select 1') { select 1 }
     assert_sql('select pg_sleep(1)') { select pg_sleep(1) }
@@ -31,7 +31,7 @@ class SelectTest < MiniTest::Test
   end
 end
 
-class FromTest < MiniTest::Test
+class FromTest < Minitest::Test
   def test_that_from_accepts_table_name
     assert_sql('select * from abc') {
       from abc
@@ -58,7 +58,7 @@ class FromTest < MiniTest::Test
   end
 end
 
-class WithTest < MiniTest::Test
+class WithTest < Minitest::Test
   def test_that_with_accepts_sub_queries
     assert_sql('with t1 as (select 1 as a), t2 as (select 2 as b) select * from b') {
       with t1.as { select _l(1).as a }, t2.as { select _l(2).as b }
@@ -68,7 +68,7 @@ class WithTest < MiniTest::Test
   end
 end
 
-class WhereTest < MiniTest::Test
+class WhereTest < Minitest::Test
   def test_that_where_accepts_boolean_const
     assert_sql('select * from a where true') {
       from a
@@ -157,7 +157,7 @@ class WhereTest < MiniTest::Test
   end
 end
 
-class DSLTest < MiniTest::Test
+class DSLTest < Minitest::Test
   class Eno::Identifier
     def [](sym)
       case sym
@@ -186,7 +186,7 @@ class DSLTest < MiniTest::Test
   end
 end
 
-class WindowTest < MiniTest::Test
+class WindowTest < Minitest::Test
   def test_that_over_is_supported
     assert_sql('select last_value(q) over w as q_last, last_value(v) over w as v_last') {
       select last_value(q).over(w).as(q_last),
@@ -215,7 +215,7 @@ class WindowTest < MiniTest::Test
   end
 end
 
-class ContextTest < MiniTest::Test
+class ContextTest < Minitest::Test
   def test_that_context_passed_can_be_used_in_query
     query = Q(tbl: :nodes, field: :sample_rate, value: 42) {
       select a, b
@@ -258,7 +258,7 @@ class ContextTest < MiniTest::Test
   end
 end
 
-class MutationTest < MiniTest::Test
+class MutationTest < Minitest::Test
   def test_that_query_can_further_refined_with_where_clause
     q = Q {
       select a, b
@@ -289,7 +289,7 @@ class MutationTest < MiniTest::Test
   end
 end
 
-class CastTest < MiniTest::Test
+class CastTest < Minitest::Test
   def test_that_cast_is_correctly_formatted
     assert_sql('select cast (a as b)') { select a.cast(b) }
     assert_sql('select cast (123 as float)') { select _l(123).cast(float) }
@@ -309,7 +309,7 @@ class CastTest < MiniTest::Test
   end
 end
 
-class InTest < MiniTest::Test
+class InTest < Minitest::Test
   def test_that_in_is_correctly_formatted
     assert_sql('select * where a in (1, 2, 3)') { where a.in 1, 2, 3 }
     assert_sql('select * where a not in (1, 2, 3)') { where !a.in(1, 2, 3) }
@@ -320,7 +320,7 @@ class InTest < MiniTest::Test
   end
 end
 
-class LiteralTest < MiniTest::Test
+class LiteralTest < Minitest::Test
   def test_that_numbers_are_correctly_quoted
     assert_sql('select 123') { select 123 }
     assert_sql('select 123') { select _l(123) }
@@ -336,7 +336,7 @@ class LiteralTest < MiniTest::Test
   end
 end
 
-class ConvenienceVariablesTest < MiniTest::Test
+class ConvenienceVariablesTest < Minitest::Test
   def test_that_convenience_variables_do_not_change_query
     assert_sql('select unformatted_value::boolean, unformatted_value::float') {
       uv = unformatted_value

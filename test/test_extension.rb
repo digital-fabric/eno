@@ -2,7 +2,7 @@
 
 require_relative './helper'
 
-class ExtensionTest < MiniTest::Test
+class ExtensionTest < Minitest::Test
   module FooExtension
     def foo(x)
       Q {
