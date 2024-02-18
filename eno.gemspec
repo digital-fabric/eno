@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_development_dependency  'rake',     '~>13.0.6'
-  s.add_development_dependency  'minitest', '5.18.0'
+  s.add_development_dependency  'minitest', '5.22.2'
   s.add_development_dependency  'yard',     '0.9.34'
   s.add_development_dependency  'pg',       '1.5.3'
   # s.add_development_dependency  'sqlite3',  '1.3.13'
