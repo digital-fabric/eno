@@ -9,7 +9,7 @@ GEM
     minitest (5.22.2)
     pg (1.5.3)
     rake (13.0.6)
-    yard (0.9.34)
+    yard (0.9.36)
 
 PLATFORMS
   x86_64-linux
@@ -19,7 +19,7 @@ DEPENDENCIES
   minitest (= 5.22.2)
   pg (= 1.5.3)
   rake (~> 13.0.6)
-  yard (= 0.9.34)
+  yard (= 0.9.36)
 
 BUNDLED WITH
    2.4.1
