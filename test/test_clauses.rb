@@ -136,6 +136,11 @@ class WhereTest < Minitest::Test
       where b.null?
     }
 
+    assert_sql('select * from a where (b is null)') {
+      from a
+      where b.nil?
+    }
+
     assert_sql('select * from a where (b is not null)') {
       from a
       where !b.null?
