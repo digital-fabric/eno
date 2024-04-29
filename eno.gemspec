@@ -15,6 +15,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--title", "eno", "--main", "README.md"]
   s.extra_rdoc_files = ["README.md"]
   s.require_paths = ["lib"]
+  s.required_ruby_version = '>= 3.2'
 
   s.add_development_dependency  'rake',     '~>13.0.6'
   s.add_development_dependency  'minitest', '5.22.2'
