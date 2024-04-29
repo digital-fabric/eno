@@ -29,6 +29,16 @@ class SelectTest < Minitest::Test
       select a, b, distinct: a + b
     }
   end
+
+  def test_select_all
+    assert_sql('select *') {
+      select :*
+    }
+
+    assert_sql('select foo.*') {
+      select foo._all
+    }
+  end
 end
 
 class FromTest < Minitest::Test

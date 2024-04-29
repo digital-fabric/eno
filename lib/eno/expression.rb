@@ -221,6 +221,7 @@ module Eno
     def null?
       IsNull.new(self)
     end
+    alias_method :nil?, :null?
 
     # Returns a `IS NOT NULL` expression.
     #
@@ -228,6 +229,7 @@ module Eno
     def not_null?
       IsNotNull.new(self)
     end
+    alias_method :not_nil?, :not_null?
 
     # Returns a `JOIN` expression with the given arguments.
     #
@@ -383,6 +385,10 @@ module Eno
 
     def json(*args, **props)
       JsonExpression.new(self, *args, **props)
+    end
+
+    def _all
+      Identifier.new("#{@members[0]}.*")
     end
   end
 
