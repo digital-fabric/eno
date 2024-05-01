@@ -3,10 +3,43 @@
 require 'etc'
 require 'extralite'
 
+class ::Thread
+  def __eno_connection__
+    self[:__eno_connection__]
+  end
+
+  def __eno_checkout__
+    Eno.checkout do |db|
+      self[:__eno_connection__] = db
+      yield db
+    ensure
+      self[:__eno_connection__] = nil
+    end
+  end
+end
+
 module Eno
-  WAIT_SLEEP_TIME = 0.01
+  class << self
+    attr_reader :default_connection_pool
+
+    def reset_default_connection_pool
+      @default_connection_pool = nil
+    end
+
+    def connect(*)
+      @default_connection_pool = ConnectionPool.new(*)
+    end
+
+    def checkout(&)
+      raise "No default connection defined" if !@default_connection_pool
+
+      @default_connection_pool.checkout(&)
+    end
+  end
 
   class ConnectionPool
+    WAIT_SLEEP_TIME = 0.01
+
     attr_reader :size, :max_size
 
     def initialize(fn, max_size: Etc.nprocessors)
