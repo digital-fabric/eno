@@ -12,6 +12,7 @@ module ::Kernel
   end
 end
 
+require_relative 'eno/connection'
 require_relative 'eno/expression'
 require_relative 'eno/sql'
 require_relative 'eno/query'
